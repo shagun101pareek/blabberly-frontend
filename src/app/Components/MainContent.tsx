@@ -1,4 +1,7 @@
-// import BlabberLogo from '../assets/blabberly-logo.png';
+'use client';
+
+import Link from 'next/link';
+
 export default function MainContent() {
     return (
       <div className="mainContent-container">
@@ -14,9 +17,11 @@ export default function MainContent() {
             Blabbering made easier.
           </h2>
 
-          <button className = "mainContent-getStarted-button">
-            Get Started for Free
-          </button>
+          <Link href="/chat">
+            <button className = "mainContent-getStarted-button">
+              Get Started for Free
+            </button>
+          </Link>
 
           <button className="mainContent-learnMore-button">
             Learn More
