@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Modal from './Modal';
 import { loginUserAPI } from '../hooks/loginUserAPI';
 
@@ -14,6 +15,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +41,8 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         setEmail('');
         setPassword('');
         onClose();
+        // Redirect to chat page
+        router.push('/chat');
       } else {
         setError(response.message || 'Login failed. Please try again.');
       }
