@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Modal from './Modal';
 import { createUserAPI } from '../hooks/createUserAPI';
 
@@ -20,6 +21,7 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -44,6 +46,11 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
         setSuccess(true);
         console.log('User created successfully:', response);
         
+        // Store token if provided
+        if (response.token) {
+          localStorage.setItem('authToken', response.token);
+        }
+        
         // Reset form after successful signup
         setFormData({
           firstName: '',
@@ -53,11 +60,13 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
           password: '',
         });
         
-        // Close modal after a short delay to show success message
+        // Close modal after a short delay to show success message, then redirect
         setTimeout(() => {
           onClose();
           setSuccess(false);
-        }, 2000);
+          // Redirect to chat page
+          router.push('/chat');
+        }, 1500);
       }
     } catch (err) {
       console.error('Signup error:', err);
