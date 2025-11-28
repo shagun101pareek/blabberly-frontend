@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Modal from './Modal';
+import { createUserAPI } from '../hooks/createUserAPI';
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -12,11 +13,13 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
+    username: '',
     email: '',
     password: '',
-    age: '',
-    phoneNumber: '',
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -26,10 +29,42 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Signup logic will go here
-    console.log('Signup submitted:', formData);
+    setIsLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      const response = await createUserAPI(formData);
+      
+      if (response.error) {
+        setError(response.error || 'Failed to create account. Please try again.');
+      } else {
+        setSuccess(true);
+        console.log('User created successfully:', response);
+        
+        // Reset form after successful signup
+        setFormData({
+          firstName: '',
+          lastName: '',
+          username: '',
+          email: '',
+          password: '',
+        });
+        
+        // Close modal after a short delay to show success message
+        setTimeout(() => {
+          onClose();
+          setSuccess(false);
+        }, 2000);
+      }
+    } catch (err) {
+      console.error('Signup error:', err);
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -75,6 +110,22 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
         </div>
 
         <div className="form-group">
+          <label htmlFor="username" className="form-label">
+            Username
+          </label>
+          <input
+            type="text"
+            id="username"
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+            className="form-input"
+            placeholder="Enter a username"
+            required
+          />
+        </div>
+
+        <div className="form-group">
           <label htmlFor="email" className="form-label">
             Email ID
           </label>
@@ -106,44 +157,25 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
           />
         </div>
 
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="age" className="form-label">
-              Age
-            </label>
-            <input
-              type="number"
-              id="age"
-              name="age"
-              value={formData.age}
-              onChange={handleChange}
-              className="form-input"
-              placeholder="25"
-              min="13"
-              max="120"
-              required
-            />
+        {error && (
+          <div className="error-message" style={{ color: 'red', marginBottom: '1rem', textAlign: 'center' }}>
+            {error}
           </div>
+        )}
 
-          <div className="form-group">
-            <label htmlFor="phoneNumber" className="form-label">
-              Phone Number
-            </label>
-            <input
-              type="tel"
-              id="phoneNumber"
-              name="phoneNumber"
-              value={formData.phoneNumber}
-              onChange={handleChange}
-              className="form-input"
-              placeholder="+1 234 567 8900"
-              required
-            />
+        {success && (
+          <div className="success-message" style={{ color: 'green', marginBottom: '1rem', textAlign: 'center' }}>
+            Account created successfully! Redirecting...
           </div>
-        </div>
+        )}
 
-        <button type="submit" className="form-submit-button">
-          Sign Up
+        <button 
+          type="submit" 
+          className="form-submit-button"
+          disabled={isLoading}
+          style={{ opacity: isLoading ? 0.6 : 1, cursor: isLoading ? 'not-allowed' : 'pointer' }}
+        >
+          {isLoading ? 'Creating Account...' : 'Sign Up'}
         </button>
       </form>
     </Modal>

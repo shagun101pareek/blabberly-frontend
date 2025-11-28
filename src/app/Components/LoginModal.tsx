@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Modal from './Modal';
+import { loginUserAPI } from '../hooks/loginUserAPI';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -11,11 +12,42 @@ interface LoginModalProps {
 export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Login logic will go here
-    console.log('Login submitted:', { email, password });
+    setError('');
+    setIsLoading(true);
+
+    try {
+      const userData = {
+        emailOrUsername: email,
+        password: password,
+      };
+
+      const response = await loginUserAPI(userData);
+      
+      // Check if login was successful
+      if (response.success || response.token) {
+        console.log('Login successful:', response);
+        // Store token if provided
+        if (response.token) {
+          localStorage.setItem('authToken', response.token);
+        }
+        // Close modal and reset form
+        setEmail('');
+        setPassword('');
+        onClose();
+      } else {
+        setError(response.message || 'Login failed. Please try again.');
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      setError('An error occurred during login. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -26,6 +58,19 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
       </div>
 
       <form onSubmit={handleSubmit} className="modal-form">
+        {error && (
+          <div className="error-message" style={{ 
+            color: '#ef4444', 
+            backgroundColor: '#fee2e2', 
+            padding: '0.75rem', 
+            borderRadius: '0.5rem', 
+            marginBottom: '1rem',
+            fontSize: '0.875rem'
+          }}>
+            {error}
+          </div>
+        )}
+
         <div className="form-group">
           <label htmlFor="email" className="form-label">
             Email ID
@@ -38,6 +83,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
             className="form-input"
             placeholder="Enter your email"
             required
+            disabled={isLoading}
           />
         </div>
 
@@ -53,11 +99,17 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
             className="form-input"
             placeholder="Enter your password"
             required
+            disabled={isLoading}
           />
         </div>
 
-        <button type="submit" className="form-submit-button">
-          Login
+        <button 
+          type="submit" 
+          className="form-submit-button"
+          disabled={isLoading}
+          style={{ opacity: isLoading ? 0.7 : 1, cursor: isLoading ? 'not-allowed' : 'pointer' }}
+        >
+          {isLoading ? 'Logging in...' : 'Login'}
         </button>
 
         <div className="form-divider">
