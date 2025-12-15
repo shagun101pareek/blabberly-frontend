@@ -1,25 +1,35 @@
-// import BlabberLogo from '../assets/blabberly-logo.png';
+'use client';
+
+import { useState } from 'react';
+import SignupModal from './SignupModal';
+
 export default function MainContent() {
+    const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
+
     return (
-      <div className="mainContent-container">
-        <div className="mainContent-wrapper">
-          {/* Main Heading */}
-          <h1 className="mainContent-heading">
-            Connect instantly. <br /> 
-            And blabber without boundaries.
-          </h1>
-          
-          {/* Subheading */}
-          <h2 className="mainContent-subheading">
-            Blabbering made easier.
-          </h2>
+      <>
+        <div className="mainContent-container">
+          <div className="mainContent-wrapper">
+            {/* Main Heading */}
+            <h1 className="mainContent-heading">
+              Connect instantly. <br /> 
+              And blabber without boundaries.
+            </h1>
+            
+            {/* Subheading */}
+            <h2 className="mainContent-subheading">
+              Blabbering made easier.
+            </h2>
 
-          <button className = "mainContent-getStarted-button">
-            Get Started for Free
-          </button>
+            <button 
+              className="mainContent-getStarted-button"
+              onClick={() => setIsSignupModalOpen(true)}
+            >
+              Get Started for Free
+            </button>
 
-          <button className="mainContent-learnMore-button">
-            Learn More
+            <button className="mainContent-learnMore-button">
+              Learn More
             </button>
 
           {/* Feature Cards */}
@@ -59,5 +69,12 @@ export default function MainContent() {
           </div>
         </div>
       </div>
+
+        {/* Signup Modal */}
+        <SignupModal 
+          isOpen={isSignupModalOpen} 
+          onClose={() => setIsSignupModalOpen(false)} 
+        />
+      </>
     );
   }
