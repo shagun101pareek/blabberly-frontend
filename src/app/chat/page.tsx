@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import Navbar from '../Components/Navbar';
+import ChatSidebar from '../Components/ChatSidebar';
 import ChatList from '../Components/ChatList';
 import ChatView from '../Components/ChatView';
+import ProtectedRoute from '../Components/ProtectedRoute';
 
 export default function ChatPage() {
   const [selectedChat, setSelectedChat] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<'chats' | 'settings' | 'profile'>('chats');
 
   // Sample chat data - you can replace this with real data from your backend
   const chats = [
@@ -47,21 +49,30 @@ export default function ChatPage() {
     }
   ];
 
+  const handleTabChange = (tab: 'chats' | 'settings' | 'profile') => {
+    setActiveTab(tab);
+    // In the future, you can add logic here to show different views
+  };
+
   return (
-    <div className="chat-page">
-      <Navbar />
-      <div className="chat-container">
-        <ChatList 
-          chats={chats} 
-          selectedChat={selectedChat}
-          onSelectChat={setSelectedChat}
-        />
-        <ChatView 
-          selectedChat={selectedChat}
-          chatData={chats.find(chat => chat.id === selectedChat)}
-        />
+    <ProtectedRoute>
+      <div className="chat-page">
+        <div className="chat-main-container">
+          <ChatSidebar activeTab={activeTab} onTabChange={handleTabChange} />
+          <div className="chat-container">
+            <ChatList 
+              chats={chats} 
+              selectedChat={selectedChat}
+              onSelectChat={setSelectedChat}
+            />
+            <ChatView 
+              selectedChat={selectedChat}
+              chatData={chats.find(chat => chat.id === selectedChat)}
+            />
+          </div>
+        </div>
       </div>
-    </div>
+    </ProtectedRoute>
   );
 }
 

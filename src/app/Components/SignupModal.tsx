@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Modal from './Modal';
 import { createUserAPI } from '../hooks/createUserAPI';
+import { setAuthToken } from '../utils/auth';
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -48,7 +49,7 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
         
         // Store token if provided
         if (response.token) {
-          localStorage.setItem('authToken', response.token);
+          setAuthToken(response.token);
         }
         
         // Reset form after successful signup
