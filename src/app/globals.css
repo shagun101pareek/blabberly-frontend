@@ -438,6 +438,8 @@ body {
   transition: all 0.2s;
   outline: none;
   font-family: inherit;
+  color: #111827; /* Ensure typed text is clearly visible */
+  background-color: #ffffff;
 }
 
 .form-input:focus {
@@ -446,6 +448,23 @@ body {
 }
 
 .form-input::placeholder {
+  color: #9ca3af;
+}
+
+/* Ensure all text inputs have dark text for better readability */
+input[type='text'],
+input[type='email'],
+input[type='password'],
+input[type='search'],
+textarea {
+  color: #111827;
+}
+
+input[type='text']::placeholder,
+input[type='email']::placeholder,
+input[type='password']::placeholder,
+input[type='search']::placeholder,
+textarea::placeholder {
   color: #9ca3af;
 }
 
@@ -540,14 +559,14 @@ body {
 /* ==================== CHAT PAGE STYLES ==================== */
 
 .chat-page {
-  height: 100vh;
+  min-height: 100vh;
   overflow: hidden;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%);
 }
 
 .chat-main-container {
   display: flex;
-  height: 100vh;
+  height: calc(100vh - 4rem); /* account for top navbar */
 }
 
 .chat-container {
