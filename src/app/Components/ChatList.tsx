@@ -1,68 +1,110 @@
 'use client';
 
 import Image from 'next/image';
-
-interface Chat {
-  id: number;
-  name: string;
-  lastMessage: string;
-  timestamp: string;
-  unread: number;
-}
+import type { ChatRoom } from '../hooks/chat';
+import type { FriendRequest } from '../hooks/friend';
 
 interface ChatListProps {
-  chats: Chat[];
-  selectedChat: number | null;
-  onSelectChat: (chatId: number) => void;
+  chatRooms: ChatRoom[];
+  selectedChatId: string | null;
+  onSelectChat: (chatId: string) => void;
+  friendRequests?: FriendRequest[];
+  onNewChat?: () => void;
 }
 
-export default function ChatList({ chats, selectedChat, onSelectChat }: ChatListProps) {
+function formatTime(date?: Date) {
+  if (!date) return '';
+  try {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return '';
+  }
+}
+
+export default function ChatList({
+  chatRooms,
+  selectedChatId,
+  onSelectChat,
+  friendRequests,
+  onNewChat,
+}: ChatListProps) {
+  const rooms = chatRooms || [];
+
   return (
     <div className="chat-list">
-      <div className="chat-list-header">
-        <h2 className="chat-list-title">Blabberly</h2>
-        <button className="chat-list-new-chat-button">
-          <Image 
-            src="/Images/Blabberly_logo.png" 
-            alt="Blabberly Logo" 
-            width={40} 
-            height={40}
-          />
-        </button>
-      </div>
-      
+        
+
       <div className="chat-list-search">
-        <input 
-          type="text" 
+        <input
+          type="text"
           placeholder="Search conversations..."
           className="chat-list-search-input"
         />
       </div>
 
+      {/* Simple pending requests indicator at top of list (can be enhanced later) */}
+      {friendRequests && friendRequests.length > 0 && (
+        <div className="chat-list-item chat-list-item-new">
+          <div className="chat-list-item-content">
+            <div className="chat-list-item-header">
+              <h3 className="chat-list-item-name">
+                {friendRequests.length} pending friend
+                {friendRequests.length > 1 ? ' requests' : ' request'}
+              </h3>
+            </div>
+            <div className="chat-list-item-footer">
+              <p className="chat-list-item-message">
+                Open requests from people who want to connect with you.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="chat-list-items">
-        {chats.map((chat) => (
+        {rooms.map((room) => (
           <div
-            key={chat.id}
-            className={`chat-list-item ${selectedChat === chat.id ? 'chat-list-item-active' : ''}`}
-            onClick={() => onSelectChat(chat.id)}
+            key={room.id}
+            className={`chat-list-item ${selectedChatId === room.id ? 'chat-list-item-active' : ''}`}
+            onClick={() => onSelectChat(room.id)}
           >
             <div className="chat-list-item-avatar">
-              {chat.name.charAt(0).toUpperCase()}
+              {room.friendUsername.charAt(0).toUpperCase()}
             </div>
             <div className="chat-list-item-content">
               <div className="chat-list-item-header">
-                <h3 className="chat-list-item-name">{chat.name}</h3>
-                <span className="chat-list-item-timestamp">{chat.timestamp}</span>
+                <h3 className="chat-list-item-name">{room.friendUsername}</h3>
+                <span className="chat-list-item-timestamp">
+                  {formatTime(room.lastMessageTime)}
+                </span>
               </div>
               <div className="chat-list-item-footer">
-                <p className="chat-list-item-message">{chat.lastMessage}</p>
-                {chat.unread > 0 && (
-                  <span className="chat-list-item-unread">{chat.unread}</span>
+                <p className="chat-list-item-message">
+                  {room.lastMessage || 'Say hi to your new friend!'}
+                </p>
+                {room.unreadCount > 0 && (
+                  <span className="chat-list-item-unread">{room.unreadCount}</span>
                 )}
               </div>
             </div>
           </div>
         ))}
+
+        {rooms.length === 0 && (!friendRequests || friendRequests.length === 0) && (
+          <div className="chat-list-empty">
+            <div className="chat-list-empty-text">No conversations yet</div>
+            <p className="chat-list-empty-subtext">
+              Start a new chat by finding friends.
+            </p>
+            <button
+              type="button"
+              className="chat-list-empty-cta"
+              onClick={onNewChat}
+            >
+              Find friends
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
