@@ -1,6 +1,11 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { sendFriendRequestAPI } from './sendFriendRequestAPI';
+import { getPendingFriendRequestsAPI } from './getPendingFriendRequestsAPI';
+import { acceptFriendRequestAPI } from './acceptFriendRequestAPI';
+import { useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
 
 export interface FriendRequest {
   id: string;
@@ -18,68 +23,81 @@ export interface Friend {
   isOnline?: boolean;
 }
 
-// Mock incoming friend requests
-const mockIncomingRequests: FriendRequest[] = [
-  {
-    id: 'req1',
-    senderId: 'u1',
-    senderUsername: 'taylor_swift',
-    senderAvatar: '',
-    createdAt: new Date(Date.now() - 1000 * 60 * 30), // 30 mins ago
-  },
-  {
-    id: 'req2',
-    senderId: 'u2',
-    senderUsername: 'ninja_coder',
-    senderAvatar: '',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-  },
-  {
-    id: 'req3',
-    senderId: 'u3',
-    senderUsername: 'pixel_artist',
-    senderAvatar: '',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
-  },
-];
-
 export function useFriendRequests() {
-  const [incomingRequests, setIncomingRequests] = useState<FriendRequest[]>(mockIncomingRequests);
+  const [incomingRequests, setIncomingRequests] = useState<FriendRequest[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+
+  const fetchPendingRequests = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await getPendingFriendRequestsAPI();
+      
+      // Transform API response to FriendRequest format
+      const transformedRequests: FriendRequest[] = response.requests.map((req) => ({
+        id: req._id,
+        senderId: req.fromUser._id,
+        senderUsername: req.fromUser.username,
+        senderAvatar: undefined, // API doesn't provide avatar yet
+        createdAt: new Date(req.createdAt),
+      }));
+
+      setIncomingRequests(transformedRequests);
+      setTotalCount(response.count);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch pending friend requests';
+      setError(errorMessage);
+      console.error('Error fetching pending friend requests:', err);
+      setIncomingRequests([]);
+      setTotalCount(0);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   const acceptRequest = useCallback(async (requestId: string): Promise<Friend | null> => {
     setIsLoading(true);
     setError(null);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const response = await acceptFriendRequestAPI(requestId);
 
-      const request = incomingRequests.find(r => r.id === requestId);
-      if (!request) {
-        throw new Error('Request not found');
-      }
-
-      // Remove from incoming requests
       setIncomingRequests(prev => prev.filter(r => r.id !== requestId));
 
-      // Return the new friend
+      toast.success(`You are now friends with ${response.friend.username}`);
+      
+      // Optionally refresh friends list and chatrooms list
+      // For now, we'll just return the new friend
       const newFriend: Friend = {
-        id: request.senderId,
-        username: request.senderUsername,
-        avatar: request.senderAvatar,
-        isOnline: true,
+        id: response.friend.id,
+        username: response.friend.username,
+        avatar: response.friend.avatar,
+        isOnline: true, 
       };
 
       return newFriend;
     } catch (err) {
-      setError('Failed to accept friend request');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to accept friend request';
+      
+      if (errorMessage.includes('401')) {
+        toast.error('Session expired. Please log in again.');
+        router.push('/login'); 
+      } else if (errorMessage.includes('404')) {
+        toast.error('Friend request not found.');
+      } else {
+        toast.error(errorMessage);
+      }
+      setError(errorMessage);
+      console.error('Error accepting friend request:', err);
       return null;
     } finally {
       setIsLoading(false);
     }
-  }, [incomingRequests]);
+  }, [router]);
 
   const rejectRequest = useCallback(async (requestId: string): Promise<boolean> => {
     setIsLoading(true);
@@ -90,9 +108,12 @@ export function useFriendRequests() {
       await new Promise(resolve => setTimeout(resolve, 500));
 
       setIncomingRequests(prev => prev.filter(r => r.id !== requestId));
+      toast.info('Friend request rejected.');
       return true;
     } catch (err) {
-      setError('Failed to reject friend request');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to reject friend request';
+      setError(errorMessage);
+      toast.error(errorMessage);
       return false;
     } finally {
       setIsLoading(false);
@@ -100,25 +121,18 @@ export function useFriendRequests() {
   }, []);
 
   const refreshRequests = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      // Simulate API call to fetch fresh requests
-      await new Promise(resolve => setTimeout(resolve, 300));
-      // In real app, would fetch from backend
-    } catch (err) {
-      setError('Failed to refresh requests');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    await fetchPendingRequests();
+  }, [fetchPendingRequests]);
 
   return {
     incomingRequests,
+    totalCount,
     isLoading,
     error,
     acceptRequest,
     rejectRequest,
     refreshRequests,
+    fetchPendingRequests,
     requestCount: incomingRequests.length,
   };
 }
@@ -157,6 +171,79 @@ export function useFriends() {
     removeFriend,
     isLoading,
     hasFriends: friends.length > 0,
+  };
+}
+
+// Mock friend suggestions (users not yet friends)
+const mockFriendSuggestions: Friend[] = [
+  {
+    id: 'sug1',
+    username: 'alex_dev',
+    avatar: '',
+    isOnline: true,
+  },
+  {
+    id: 'sug2',
+    username: 'sarah_designs',
+    avatar: '',
+    isOnline: false,
+  },
+  {
+    id: 'sug3',
+    username: 'mike_codes',
+    avatar: '',
+    isOnline: true,
+  },
+  {
+    id: 'sug4',
+    username: 'emma_writes',
+    avatar: '',
+    isOnline: true,
+  },
+  {
+    id: 'sug5',
+    username: 'john_builder',
+    avatar: '',
+    isOnline: false,
+  },
+  {
+    id: 'sug6',
+    username: 'lisa_creates',
+    avatar: '',
+    isOnline: true,
+  },
+];
+
+export function useFriendSuggestions() {
+  const [suggestions, setSuggestions] = useState<Friend[]>(mockFriendSuggestions);
+  const [isLoading, setIsLoading] = useState(false);
+  const [pendingRequests, setPendingRequests] = useState<Set<string>>(new Set());
+
+  const sendFriendRequest = useCallback(async (userId: string): Promise<boolean> => {
+    setIsLoading(true);
+    try {
+      // Call the real API
+      await sendFriendRequestAPI(userId);
+      
+      setPendingRequests(prev => new Set([...prev, userId]));
+      
+      // Remove from suggestions after sending request
+      setSuggestions(prev => prev.filter(s => s.id !== userId));
+      
+      return true;
+    } catch (err) {
+      console.error('Error sending friend request:', err);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return {
+    suggestions,
+    isLoading,
+    sendFriendRequest,
+    pendingRequests,
   };
 }
 
