@@ -1,22 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { FriendRequest } from '../hooks/friend';
+import { FriendRequest, useFriendRequests, Friend } from '../hooks/friend';
 
 interface FriendRequestBannerProps {
   requests: FriendRequest[];
-  onAccept: (requestId: string) => void;
-  onReject: (requestId: string) => void;
-  isLoading?: boolean;
 }
 
-export default function FriendRequestBanner({ 
-  requests, 
-  onAccept, 
-  onReject, 
-  isLoading = false 
+export default function FriendRequestBanner({
+  requests,
 }: FriendRequestBannerProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const { acceptRequest, rejectRequest, isLoading: isProcessing } = useFriendRequests();
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
 
   if (requests.length === 0) {
@@ -25,7 +20,10 @@ export default function FriendRequestBanner({
 
   const handleAccept = async (requestId: string) => {
     setProcessingIds(prev => new Set([...prev, requestId]));
-    await onAccept(requestId);
+    const newFriend = await acceptRequest(requestId);
+    if (newFriend) {
+      // Optionally add the new friend to a global state or trigger a refresh
+    }
     setProcessingIds(prev => {
       const next = new Set(prev);
       next.delete(requestId);
@@ -35,7 +33,7 @@ export default function FriendRequestBanner({
 
   const handleReject = async (requestId: string) => {
     setProcessingIds(prev => new Set([...prev, requestId]));
-    await onReject(requestId);
+    await rejectRequest(requestId);
     setProcessingIds(prev => {
       const next = new Set(prev);
       next.delete(requestId);
@@ -105,7 +103,7 @@ export default function FriendRequestBanner({
                 <button 
                   className="friend-request-btn friend-request-btn-accept"
                   onClick={() => handleAccept(request.id)}
-                  disabled={processingIds.has(request.id) || isLoading}
+                  disabled={processingIds.has(request.id) || isProcessing}
                   title="Accept"
                 >
                   {processingIds.has(request.id) ? (
@@ -119,7 +117,7 @@ export default function FriendRequestBanner({
                 <button 
                   className="friend-request-btn friend-request-btn-reject"
                   onClick={() => handleReject(request.id)}
-                  disabled={processingIds.has(request.id) || isLoading}
+                  disabled={processingIds.has(request.id) || isProcessing}
                   title="Reject"
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none">

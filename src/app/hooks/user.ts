@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { sendFriendRequestAPI } from './sendFriendRequestAPI';
 
 export interface User {
   id: string;
@@ -88,6 +89,7 @@ export function useUserSearch() {
         }));
 
         setSearchResults(resultsWithStatus);
+        
       } catch (err) {
         setError('Failed to search users. Please try again.');
         setSearchResults([]);
@@ -100,9 +102,10 @@ export function useUserSearch() {
   }, [debouncedQuery, pendingRequests, friends]);
 
   const sendFriendRequest = useCallback(async (userId: string) => {
+    setError(null);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Call the real API
+      await sendFriendRequestAPI(userId);
       
       setPendingRequests(prev => new Set([...prev, userId]));
       
@@ -117,7 +120,9 @@ export function useUserSearch() {
       
       return true;
     } catch (err) {
-      setError('Failed to send friend request');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to send friend request';
+      setError(errorMessage);
+      console.error('Error sending friend request:', err);
       return false;
     }
   }, []);

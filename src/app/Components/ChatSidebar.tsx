@@ -14,7 +14,10 @@ export default function ChatSidebar({ activeTab = 'chats', onTabChange }: ChatSi
   const router = useRouter();
 
   const handleTabClick = (tab: 'chats' | 'settings' | 'profile') => {
-    if (onTabChange) {
+    if (tab === 'chats') {
+      // Navigate to chat page
+      router.push('/chat');
+    } else if (onTabChange) {
       onTabChange(tab);
     }
   };
