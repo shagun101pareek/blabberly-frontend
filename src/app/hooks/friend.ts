@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { sendFriendRequestAPI } from './sendFriendRequestAPI';
 import { getPendingFriendRequestsAPI } from './getPendingFriendRequestsAPI';
 import { acceptFriendRequestAPI } from './acceptFriendRequestAPI';
 import { useRouter } from 'next/navigation';
-import { toast } from 'react-hot-toast';
+import { getAuthToken } from '../utils/auth';
 
 export interface FriendRequest {
   id: string;
@@ -68,7 +68,6 @@ export function useFriendRequests() {
 
       setIncomingRequests(prev => prev.filter(r => r.id !== requestId));
 
-      toast.success(`You are now friends with ${response.friend.username}`);
       
       // Optionally refresh friends list and chatrooms list
       // For now, we'll just return the new friend
@@ -83,14 +82,6 @@ export function useFriendRequests() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to accept friend request';
       
-      if (errorMessage.includes('401')) {
-        toast.error('Session expired. Please log in again.');
-        router.push('/login'); 
-      } else if (errorMessage.includes('404')) {
-        toast.error('Friend request not found.');
-      } else {
-        toast.error(errorMessage);
-      }
       setError(errorMessage);
       console.error('Error accepting friend request:', err);
       return null;
@@ -108,12 +99,9 @@ export function useFriendRequests() {
       await new Promise(resolve => setTimeout(resolve, 500));
 
       setIncomingRequests(prev => prev.filter(r => r.id !== requestId));
-      toast.info('Friend request rejected.');
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to reject friend request';
-      setError(errorMessage);
-      toast.error(errorMessage);
       return false;
     } finally {
       setIsLoading(false);
@@ -135,6 +123,10 @@ export function useFriendRequests() {
     fetchPendingRequests,
     requestCount: incomingRequests.length,
   };
+
+  useEffect(() => {
+    fetchPendingRequests();
+  }, [fetchPendingRequests]);
 }
 
 export function useFriends() {
@@ -174,50 +166,57 @@ export function useFriends() {
   };
 }
 
-// Mock friend suggestions (users not yet friends)
-const mockFriendSuggestions: Friend[] = [
-  {
-    id: 'sug1',
-    username: 'alex_dev',
-    avatar: '',
-    isOnline: true,
-  },
-  {
-    id: 'sug2',
-    username: 'sarah_designs',
-    avatar: '',
-    isOnline: false,
-  },
-  {
-    id: 'sug3',
-    username: 'mike_codes',
-    avatar: '',
-    isOnline: true,
-  },
-  {
-    id: 'sug4',
-    username: 'emma_writes',
-    avatar: '',
-    isOnline: true,
-  },
-  {
-    id: 'sug5',
-    username: 'john_builder',
-    avatar: '',
-    isOnline: false,
-  },
-  {
-    id: 'sug6',
-    username: 'lisa_creates',
-    avatar: '',
-    isOnline: true,
-  },
-];
-
 export function useFriendSuggestions() {
-  const [suggestions, setSuggestions] = useState<Friend[]>(mockFriendSuggestions);
+  const [suggestions, setSuggestions] = useState<Friend[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [pendingRequests, setPendingRequests] = useState<Set<string>>(new Set());
+
+  const fetchSuggestions = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        throw new Error('No authorization token found.');
+      }
+
+      const response = await fetch('http://localhost:5000/api/users/discover', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          // toast.error('Session expired. Please log in again.');
+          // You might want to redirect to login page here
+        }
+        throw new Error(`Failed to fetch suggestions: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      // Assuming data.users is an array of user objects
+      const transformedSuggestions: Friend[] = data.map((user: any) => ({
+        id: user._id,
+        username: user.username,
+        avatar: '',
+        isOnline: false,
+      }));
+
+      setSuggestions(transformedSuggestions);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch friend suggestions';
+      console.error('Error fetching friend suggestions:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSuggestions();
+  }, [fetchSuggestions]);
 
   const sendFriendRequest = useCallback(async (userId: string): Promise<boolean> => {
     setIsLoading(true);
@@ -242,6 +241,8 @@ export function useFriendSuggestions() {
   return {
     suggestions,
     isLoading,
+    error,
+    fetchSuggestions,
     sendFriendRequest,
     pendingRequests,
   };
