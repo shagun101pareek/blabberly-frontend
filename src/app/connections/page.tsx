@@ -74,7 +74,12 @@ export default function ConnectionsPage() {
     <ProtectedRoute>
       <div className="chat-page flex flex-col">
         {/* Navbar */}
-<ChatNavbar />
+        <ChatNavbar
+          friendRequests={incomingRequests}
+          onAcceptRequest={handleAcceptRequest}
+          onRejectRequest={handleRejectRequest}
+          isLoading={friendRequestsLoading}
+        />
 
         {/* Main Content with Sidebar */}
         <div className="chat-main-container pt-16">
