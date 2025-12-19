@@ -2,10 +2,9 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { sendFriendRequestAPI } from './sendFriendRequestAPI';
-import { getPendingFriendRequestsAPI } from './getPendingFriendRequestsAPI';
+import { getPendingFriendRequestsAPI, PendingFriendRequest } from './getPendingFriendRequestsAPI';
+import { discoverUsersAPI, DiscoverUser } from './discoverUsersAPI';
 import { acceptFriendRequestAPI } from './acceptFriendRequestAPI';
-import { useRouter } from 'next/navigation';
-import { getAuthToken } from '../utils/auth';
 
 export interface FriendRequest {
   id: string;
@@ -23,40 +22,63 @@ export interface Friend {
   isOnline?: boolean;
 }
 
+// Mock incoming friend requests
+const mockIncomingRequests: FriendRequest[] = [
+  {
+    id: 'req1',
+    senderId: 'u1',
+    senderUsername: 'taylor_swift',
+    senderAvatar: '',
+    createdAt: new Date(Date.now() - 1000 * 60 * 30), // 30 mins ago
+  },
+  {
+    id: 'req2',
+    senderId: 'u2',
+    senderUsername: 'ninja_coder',
+    senderAvatar: '',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
+  },
+  {
+    id: 'req3',
+    senderId: 'u3',
+    senderUsername: 'pixel_artist',
+    senderAvatar: '',
+    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
+  },
+];
+
 export function useFriendRequests() {
   const [incomingRequests, setIncomingRequests] = useState<FriendRequest[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
 
-  const fetchPendingRequests = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+  // Fetch pending friend requests on mount
+  useEffect(() => {
+    const fetchPendingRequests = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const pendingRequests = await getPendingFriendRequestsAPI();
+        // Convert API response to FriendRequest format
+        // getPendingFriendRequestsAPI already returns the correct format, just need to convert createdAt to Date
+        const formattedRequests: FriendRequest[] = pendingRequests.map(req => ({
+          id: req.id,
+          senderId: req.senderId,
+          senderUsername: req.senderUsername,
+          senderAvatar: req.senderAvatar,
+          createdAt: new Date(req.createdAt),
+        }));
+        setIncomingRequests(formattedRequests);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch pending friend requests';
+        setError(errorMessage);
+        console.error('Error fetching pending friend requests:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    try {
-      const response = await getPendingFriendRequestsAPI();
-      
-      // Transform API response to FriendRequest format
-      const transformedRequests: FriendRequest[] = response.requests.map((req) => ({
-        id: req._id,
-        senderId: req.fromUser._id,
-        senderUsername: req.fromUser.username,
-        senderAvatar: undefined, // API doesn't provide avatar yet
-        createdAt: new Date(req.createdAt),
-      }));
-
-      setIncomingRequests(transformedRequests);
-      setTotalCount(response.count);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch pending friend requests';
-      setError(errorMessage);
-      console.error('Error fetching pending friend requests:', err);
-      setIncomingRequests([]);
-      setTotalCount(0);
-    } finally {
-      setIsLoading(false);
-    }
+    fetchPendingRequests();
   }, []);
 
   const acceptRequest = useCallback(async (requestId: string): Promise<Friend | null> => {
@@ -64,44 +86,49 @@ export function useFriendRequests() {
     setError(null);
 
     try {
+      // Call the real API
       const response = await acceptFriendRequestAPI(requestId);
 
+      const request = incomingRequests.find(r => r.id === requestId);
+      if (!request) {
+        throw new Error('Request not found');
+      }
+
+      // Remove from incoming requests
       setIncomingRequests(prev => prev.filter(r => r.id !== requestId));
 
-      
-      // Optionally refresh friends list and chatrooms list
-      // For now, we'll just return the new friend
+      // Return the new friend
       const newFriend: Friend = {
-        id: response.friend.id,
-        username: response.friend.username,
-        avatar: response.friend.avatar,
-        isOnline: true, 
+        id: request.senderId,
+        username: request.senderUsername,
+        avatar: request.senderAvatar,
+        isOnline: true,
       };
 
       return newFriend;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to accept friend request';
-      
       setError(errorMessage);
       console.error('Error accepting friend request:', err);
       return null;
     } finally {
       setIsLoading(false);
     }
-  }, [router]);
+  }, [incomingRequests]);
 
   const rejectRequest = useCallback(async (requestId: string): Promise<boolean> => {
     setIsLoading(true);
     setError(null);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-
+      // TODO: Implement reject API call when backend endpoint is available
+      // For now, just remove from local state
       setIncomingRequests(prev => prev.filter(r => r.id !== requestId));
       return true;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to reject friend request';
+      setError(errorMessage);
+      console.error('Error rejecting friend request:', err);
       return false;
     } finally {
       setIsLoading(false);
@@ -109,24 +136,37 @@ export function useFriendRequests() {
   }, []);
 
   const refreshRequests = useCallback(async () => {
-    await fetchPendingRequests();
-  }, [fetchPendingRequests]);
+    setIsLoading(true);
+    setError(null);
+    try {
+      const pendingRequests = await getPendingFriendRequestsAPI();
+      // Convert API response to FriendRequest format
+      const formattedRequests: FriendRequest[] = pendingRequests.map(req => ({
+        id: req.id,
+        senderId: req.senderId,
+        senderUsername: req.senderUsername,
+        senderAvatar: req.senderAvatar,
+        createdAt: new Date(req.createdAt),
+      }));
+      setIncomingRequests(formattedRequests);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to refresh requests';
+      setError(errorMessage);
+      console.error('Error refreshing friend requests:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   return {
     incomingRequests,
-    totalCount,
     isLoading,
     error,
     acceptRequest,
     rejectRequest,
     refreshRequests,
-    fetchPendingRequests,
     requestCount: incomingRequests.length,
   };
-
-  useEffect(() => {
-    fetchPendingRequests();
-  }, [fetchPendingRequests]);
 }
 
 export function useFriends() {
@@ -166,57 +206,76 @@ export function useFriends() {
   };
 }
 
+// Mock friend suggestions (users not yet friends)
+const mockFriendSuggestions: Friend[] = [
+  {
+    id: 'sug1',
+    username: 'alex_dev',
+    avatar: '',
+    isOnline: true,
+  },
+  {
+    id: 'sug2',
+    username: 'sarah_designs',
+    avatar: '',
+    isOnline: false,
+  },
+  {
+    id: 'sug3',
+    username: 'mike_codes',
+    avatar: '',
+    isOnline: true,
+  },
+  {
+    id: 'sug4',
+    username: 'emma_writes',
+    avatar: '',
+    isOnline: true,
+  },
+  {
+    id: 'sug5',
+    username: 'john_builder',
+    avatar: '',
+    isOnline: false,
+  },
+  {
+    id: 'sug6',
+    username: 'lisa_creates',
+    avatar: '',
+    isOnline: true,
+  },
+];
+
 export function useFriendSuggestions() {
   const [suggestions, setSuggestions] = useState<Friend[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [pendingRequests, setPendingRequests] = useState<Set<string>>(new Set());
 
-  const fetchSuggestions = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const token = getAuthToken();
-      if (!token) {
-        throw new Error('No authorization token found.');
-      }
-
-      const response = await fetch('http://localhost:5000/api/users/discover', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          // toast.error('Session expired. Please log in again.');
-          // You might want to redirect to login page here
-        }
-        throw new Error(`Failed to fetch suggestions: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-
-      // Assuming data.users is an array of user objects
-      const transformedSuggestions: Friend[] = data.map((user: any) => ({
-        id: user._id,
-        username: user.username,
-        avatar: '',
-        isOnline: false,
-      }));
-
-      setSuggestions(transformedSuggestions);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch friend suggestions';
-      console.error('Error fetching friend suggestions:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
+  // Fetch discover users on mount
   useEffect(() => {
-    fetchSuggestions();
-  }, [fetchSuggestions]);
+    const fetchDiscoverUsers = async () => {
+      setIsLoading(true);
+      try {
+        const discoverUsers = await discoverUsersAPI();
+        // Convert API response to Friend format
+        const formattedSuggestions: Friend[] = discoverUsers.map(user => ({
+          id: user.id,
+          username: user.username,
+          avatar: user.avatar,
+          isOnline: user.isOnline,
+        }));
+        setSuggestions(formattedSuggestions);
+      } catch (err) {
+        console.error('Error fetching discover users:', err);
+        // Fallback to empty array on error
+        setSuggestions([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDiscoverUsers();
+  }, []);
 
   const sendFriendRequest = useCallback(async (userId: string): Promise<boolean> => {
     setIsLoading(true);
@@ -241,8 +300,6 @@ export function useFriendSuggestions() {
   return {
     suggestions,
     isLoading,
-    error,
-    fetchSuggestions,
     sendFriendRequest,
     pendingRequests,
   };

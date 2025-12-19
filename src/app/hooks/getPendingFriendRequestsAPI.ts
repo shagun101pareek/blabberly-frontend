@@ -1,18 +1,31 @@
 import { getAuthToken } from "../utils/auth";
 
 export interface PendingFriendRequestResponse {
-  count: number;
   requests: Array<{
     _id: string;
     fromUser: {
       _id: string;
+      email: string;
       username: string;
+      avatar?: string;
     };
+    toUser: string;
+    status: string;
     createdAt: string;
+    updatedAt: string;
+    __v: number;
   }>;
 }
 
-export const getPendingFriendRequestsAPI = async (): Promise<PendingFriendRequestResponse> => {
+export interface PendingFriendRequest {
+  id: string;
+  senderId: string;
+  senderUsername: string;
+  senderAvatar?: string;
+  createdAt: string;
+}
+
+export const getPendingFriendRequestsAPI = async (): Promise<PendingFriendRequest[]> => {
   const token = getAuthToken();
   
   if (!token) {
@@ -30,8 +43,17 @@ export const getPendingFriendRequestsAPI = async (): Promise<PendingFriendReques
   const data = await response.json();
   
   if (!response.ok) {
-    throw new Error(data.message || 'Failed to fetch pending friend requests');
+    throw new Error((data as any).message || 'Failed to fetch pending friend requests');
   }
 
-  return data;
+  const typedData = data as PendingFriendRequestResponse;
+
+  // Transform API response to our format
+  return typedData.requests.map(req => ({
+    id: req._id,
+    senderId: req.fromUser._id,
+    senderUsername: req.fromUser.username,
+    senderAvatar: req.fromUser.avatar,
+    createdAt: req.createdAt,
+  }));
 };
