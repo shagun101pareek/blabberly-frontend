@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Modal from './Modal';
-import { loginUserAPI } from '../hooks/loginUserAPI';
+import { loginUserAPI } from '@/api/auth/auth/loginUser';
 import { setAuthToken } from '../utils/auth';
 
 interface LoginModalProps {

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { FriendRequest } from '../hooks/friend';
+import { FriendRequest } from '@/hooks/useFriendRequests';
 
 interface ChatNavbarProps {
   friendRequests?: FriendRequest[];

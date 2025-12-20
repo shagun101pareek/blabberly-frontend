@@ -1,8 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import type { ChatRoom } from '../hooks/chat';
-import type { FriendRequest } from '../hooks/friend';
+import type { ChatRoom } from '@/api/auth/chat/chat';
+import type { FriendRequest } from '@/hooks/useFriendRequests';
 
 interface ChatListProps {
   chatRooms: ChatRoom[];

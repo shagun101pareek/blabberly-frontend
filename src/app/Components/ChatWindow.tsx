@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { ChatRoom } from '../hooks/chat';
+import { ChatRoom } from '@/api/auth/chat/chat';
 
 interface ChatWindowProps {
   chatRoom: ChatRoom | null;

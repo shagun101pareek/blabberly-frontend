@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { sendFriendRequestAPI } from './sendFriendRequestAPI';
+import { sendFriendRequestAPI } from '@/api/auth/friends/sendFriendRequestAPI';
 
 export interface User {
   id: string;

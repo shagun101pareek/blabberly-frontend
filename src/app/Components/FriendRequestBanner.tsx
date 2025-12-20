@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { FriendRequest, useFriendRequests, Friend } from '../hooks/friend';
+import { FriendRequest, useFriendRequests } from '@/hooks/useFriendRequests';
 
 interface FriendRequestBannerProps {
   requests: FriendRequest[];
