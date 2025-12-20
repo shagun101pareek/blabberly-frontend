@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation';
 import ProtectedRoute from '../Components/ProtectedRoute';
 import ChatNavbar from '../Components/ChatNavbar';
 import ChatSidebar from '../Components/ChatSidebar';
-import { useFriendRequests, useFriendSuggestions, useFriends } from '../hooks/friend';
+import { useFriendRequests } from '@/hooks/useFriendRequests';
+import { useFriendSuggestions } from '@/hooks/useFriendSuggestions';
+import { useFriends } from '@/hooks/useFriends';
 
 export default function ConnectionsPage() {
   const router = useRouter();

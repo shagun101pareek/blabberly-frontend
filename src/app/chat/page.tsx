@@ -8,8 +8,9 @@ import EmptyChatView from '../Components/EmptyChatView';
 import SearchUserModal from '../Components/SearchUserModal';
 import ProtectedRoute from '../Components/ProtectedRoute';
 import ChatNavbar from '../Components/ChatNavbar';
-import { useFriendRequests, useFriends } from '../hooks/friend';
-import { useChat } from '../hooks/chat';
+import { useFriendRequests } from '@/hooks/useFriendRequests';
+import { useFriends } from '@/hooks/useFriends';
+import { useChat } from '@/api/auth/chat/chat';
 
 export default function ChatPage() {
   const [activeTab, setActiveTab] = useState<'chats' | 'settings' | 'profile'>('chats');

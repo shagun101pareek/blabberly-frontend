@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { useUserSearch, SearchResult } from '../hooks/user';
+import { useUserSearch, SearchResult } from '../types/user';
 
 interface SearchUserModalProps {
   isOpen: boolean;

@@ -1,4 +1,4 @@
-import { getAuthToken } from "../utils/auth";
+import { getAuthToken } from "@/app/utils/auth";
 
 export interface DiscoverUser {
   id: string;

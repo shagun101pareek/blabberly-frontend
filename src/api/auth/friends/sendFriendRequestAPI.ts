@@ -1,4 +1,4 @@
-import { getAuthToken } from "../utils/auth";
+import { getAuthToken } from "@/app/utils/auth";
 
 export const sendFriendRequestAPI = async (toUserId: string) => {
   const token = getAuthToken();

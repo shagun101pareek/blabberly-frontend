@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Modal from './Modal';
-import { createUserAPI } from '../hooks/createUserAPI';
-import { setAuthToken } from '../utils/auth';
+import { createUserAPI } from '@/api/auth/auth/createUser';
+import { setAuthToken } from '@/app/utils/auth';
 
 interface SignupModalProps {
   isOpen: boolean;
