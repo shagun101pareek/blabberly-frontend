@@ -59,9 +59,16 @@ export function useFriendRequests() {
 
       try {
         const request = incomingRequests.find(r => r.id === requestId);
-        if (!request) throw new Error('Request not found');
+        if (!request) {
+          const errorMsg = 'Request not found';
+          console.error('Accept request error:', errorMsg);
+          setError(errorMsg);
+          return null;
+        }
 
-        await acceptFriendRequestAPI(requestId);
+        console.log('Calling acceptFriendRequestAPI with requestId:', requestId);
+        const response = await acceptFriendRequestAPI(requestId);
+        console.log('Accept request API response:', response);
 
         setIncomingRequests(prev =>
           prev.filter(r => r.id !== requestId)
@@ -74,7 +81,9 @@ export function useFriendRequests() {
           isOnline: true,
         };
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to accept request');
+        const errorMessage = err instanceof Error ? err.message : 'Failed to accept request';
+        console.error('Accept request error:', err);
+        setError(errorMessage);
         return null;
       } finally {
         setIsLoading(false);

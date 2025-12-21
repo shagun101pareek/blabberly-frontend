@@ -103,7 +103,17 @@ export function useUserSearch() {
 
   const sendFriendRequest = useCallback(async (userId: string) => {
     setError(null);
+    
+    // Validate userId before making API call
+    if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+      const errorMsg = 'Invalid user ID provided';
+      console.error('sendFriendRequest: Invalid userId:', userId);
+      setError(errorMsg);
+      return false;
+    }
+    
     try {
+      console.log('Calling sendFriendRequestAPI with userId:', userId);
       // Call the real API
       await sendFriendRequestAPI(userId);
       

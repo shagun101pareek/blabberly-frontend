@@ -57,6 +57,14 @@ export default function SearchUserModal({ isOpen, onClose, onRequestSent }: Sear
   };
 
   const handleSendRequest = async (user: SearchResult) => {
+    console.log('handleSendRequest called with user:', user);
+    console.log('user.id:', user.id, 'type:', typeof user.id);
+    
+    if (!user.id) {
+      console.error('User ID is missing:', user);
+      return;
+    }
+    
     const success = await sendFriendRequest(user.id);
     if (success && onRequestSent) {
       onRequestSent(user.id);
