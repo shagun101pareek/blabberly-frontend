@@ -50,13 +50,26 @@ export default function ConnectionsPage() {
   }, [rejectRequest]);
 
   const handleSendFriendRequest = useCallback(async (userId: string) => {
+    // Validate userId before processing
+    if (!userId || typeof userId !== 'string' || userId.trim() === '') {
+      console.error('handleSendFriendRequest: Invalid userId:', userId);
+      return;
+    }
+
+    console.log('ConnectionsPage: handleSendFriendRequest called with userId:', userId);
     setProcessingSuggestionIds(prev => new Set([...prev, userId]));
-    await sendFriendRequest(userId);
-    setProcessingSuggestionIds(prev => {
-      const next = new Set(prev);
-      next.delete(userId);
-      return next;
-    });
+    
+    try {
+      await sendFriendRequest(userId);
+    } catch (error) {
+      console.error('Error in handleSendFriendRequest:', error);
+    } finally {
+      setProcessingSuggestionIds(prev => {
+        const next = new Set(prev);
+        next.delete(userId);
+        return next;
+      });
+    }
   }, [sendFriendRequest]);
 
   const formatTimeAgo = (date: Date) => {
@@ -232,9 +245,9 @@ export default function ConnectionsPage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {suggestions.map((suggestion) => (
+                  {suggestions.map((suggestion, index) => (
                     <div
-                      key={suggestion.id}
+                      key={suggestion.id || `suggestion-${index}`}
                       className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow"
                     >
                       <div className="flex flex-col items-center text-center">

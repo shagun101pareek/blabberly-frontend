@@ -1,33 +1,58 @@
-import axios from 'axios';
+import { getAuthToken } from '@/app/utils/auth';
 
+/**
+ * Accept a friend request
+ * @param requestId - The ID of the friend request to accept
+ * @returns Promise resolving to the accepted friend request data
+ * @throws Error if authentication fails or API request fails
+ */
 export async function acceptFriendRequestAPI(requestId: string): Promise<any> {
-  const token = localStorage.getItem('token'); 
+  const token = getAuthToken();
 
   if (!token) {
     throw new Error('No authentication token found');
   }
 
-  try {
-    const response = await axios.put(
-      `/api/friend/requests/accept/${requestId}`,
-      {}, 
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-    return response.data;
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      if (error.response) {
-        throw new Error(error.response.data.message || `API error: ${error.response.status}`);
-      } else if (error.request) {
-        throw new Error('No response received from server. Please try again.');
-      } else {
-        throw new Error('An unexpected error occurred. Please try again.');
-      }
+  const url = `http://localhost:5000/api/friend/requests/accept/${requestId}`;
+  
+  console.log('Accepting friend request:', { requestId, url });
+
+  const response = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  console.log('Accept friend request response status:', response.status, response.statusText);
+
+  // Handle non-OK responses
+  if (!response.ok) {
+    let errorMessage = 'Failed to accept friend request';
+    
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.message || errorData.error || errorMessage;
+      console.error('Accept friend request error:', errorData);
+    } catch (parseError) {
+      // If response is not JSON, use status text
+      errorMessage = `Failed to accept friend request: ${response.status} ${response.statusText}`;
+      console.error('Failed to parse error response:', parseError);
     }
-    throw new Error('An unknown error occurred.');
+    
+    throw new Error(errorMessage);
   }
+
+  // Parse successful response
+  let data;
+  try {
+    data = await response.json();
+    console.log('Accept friend request success:', data);
+  } catch (parseError) {
+    console.error('Failed to parse success response:', parseError);
+    throw new Error('Received invalid response from server');
+  }
+
+  return data;
 }

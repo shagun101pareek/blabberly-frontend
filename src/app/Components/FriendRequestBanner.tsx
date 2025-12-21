@@ -20,15 +20,23 @@ export default function FriendRequestBanner({
 
   const handleAccept = async (requestId: string) => {
     setProcessingIds(prev => new Set([...prev, requestId]));
-    const newFriend = await acceptRequest(requestId);
-    if (newFriend) {
-      // Optionally add the new friend to a global state or trigger a refresh
+    try {
+      const newFriend = await acceptRequest(requestId);
+      if (newFriend) {
+        // Optionally add the new friend to a global state or trigger a refresh
+        console.log('Friend request accepted successfully:', newFriend);
+      } else {
+        console.warn('Accept request returned null - check for errors');
+      }
+    } catch (error) {
+      console.error('Error accepting friend request:', error);
+    } finally {
+      setProcessingIds(prev => {
+        const next = new Set(prev);
+        next.delete(requestId);
+        return next;
+      });
     }
-    setProcessingIds(prev => {
-      const next = new Set(prev);
-      next.delete(requestId);
-      return next;
-    });
   };
 
   const handleReject = async (requestId: string) => {
