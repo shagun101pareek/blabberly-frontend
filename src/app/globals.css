@@ -22,10 +22,17 @@
 }
 
 /* Global Body Styles */
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
 /* Navbar Styles */
@@ -33,10 +40,18 @@ body {
   width: 100%;
   background-color: white;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid #ffe4e5;
+}
+
+.navbar-menu-item{
+  color: black;
+  margin-left: 2rem;
+  margin-right: 2rem;
+  font-weight: 500;
 }
 
 .navbar-wrapper {
-  max-width: 1280px;
+  width: 100%;
   margin: 0 auto;
   padding-left: 1rem;
   padding-right: 1rem;
@@ -60,7 +75,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 4rem;
+  height: 4.5rem;
+  border-color: solid var(--color-rose-100);
 }
 
 .navbar-logo-wrapper {
@@ -70,23 +86,20 @@ body {
 .navbar-logo-link {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
   text-decoration: none;
 }
 
 .navbar-logo-image {
   width: 3rem;
   height: 3rem;
-  object-fit: cover;
+  object-fit: contain;
   flex-shrink: 0;
-  padding: 0.5rem;
-  border-radius: 20px;
 }
 
 .navbar-logo {
-  font-size: 2rem;
-  font-weight: bold;
-  background: linear-gradient(to right, #9333ea, #db2777);
+  font-size: 1.5rem;
+  font-weight: 800;
+  background: oklch(.586 .253 17.585);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -101,9 +114,9 @@ body {
 
 .navbar-login-button {
   padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  background: linear-gradient(to right, #9333ea, #db2777);
+  font-size: 1rem;
+  font-weight: 600;
+  background: oklch(.446 .043 257.281);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -118,14 +131,14 @@ body {
 
 .navbar-signup-button {
   padding: 0.5rem 1.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: 1rem;
+  font-weight: 650;
   color: white;
-  background: linear-gradient(to right, #9333ea, #db2777);
+  background: linear-gradient(to right, #ff215a, #f63399);
   border: none;
   border-radius: 2.5rem;
   cursor: pointer;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 15px -3px var(--color-rose-200);
   transition: opacity 0.2s;
 }
 
@@ -136,11 +149,12 @@ body {
 /* Main Content Styles */
 .mainContent-container {
   width: 100%;
-  background-color: white;
+  min-height: 100vh;
+  background-color: #fef7fa;
 }
 
 .mainContent-wrapper {
-  max-width: 1280px;
+  width: 100%;
   margin: 0 auto;
   padding: 3rem 1rem;
   text-align: center;
@@ -154,7 +168,7 @@ body {
   padding: 1rem 2rem;
   font-size: 1.2rem;
   font-weight: 500;
-  background: linear-gradient(to right, #9333ea, #db2777);
+  background: linear-gradient(to right, #ff215a, #f63399);
   border: none;
   border-radius: 2.5rem;
   cursor: pointer;
@@ -184,7 +198,7 @@ body {
 }
 
 .mainContent-getStarted-button:hover {
-  opacity: 0.8;
+  background: linear-gradient(to right, var(--color-rose-600), var(--color-pink-600)) ;
 }
 
 @media (min-width: 640px) {
@@ -199,15 +213,47 @@ body {
   }
 }
 
+.mainContent-logo-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.mainContent-logo {
+  margin-top: 5rem;
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+}
+
+@media (min-width: 640px) {
+  .mainContent-logo {
+    width: 150px;
+    height: 150px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .mainContent-logo {
+    width: 180px;
+    height: 180px;
+  }
+}
+
 .mainContent-heading {
   font-size: 2.25rem;
-  font-weight: bold;
+  font-weight: 800;
   text-align: center;
-  background: linear-gradient(to right, #9333ea, #db2777);
+  color: #000000;
+  line-height: 1.2;
+}
+
+.mainContent-heading-gradient {
+  background: linear-gradient(to right, #ff2158, #f6349b);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  line-height: 1.2;
 }
 
 @media (min-width: 640px) {
@@ -226,7 +272,7 @@ body {
   margin-top: 1rem;
   text-align: center;
   color: #6b7280;
-  font-size: 2.125rem;
+  font-size: 20px;
 }
 
 /* Feature Cards Styles */

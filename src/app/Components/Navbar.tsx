@@ -21,13 +21,20 @@ export default function Navbar() {
                 <Image 
                   src="/Images/Blabberly_logo.png" 
                   alt="Blabberly Logo" 
-                  width={64} 
-                  height={64} 
-                  style={{ borderRadius: '15px' }}
+                  width={48} 
+                  height={48} 
                   className="navbar-logo-image"
+                  priority
+                  unoptimized
                 />
                 <span className="navbar-logo">Blabberly</span>
               </Link>
+            </div>
+            <div className="navbar-menu">
+              <span className="navbar-menu-item"> Features</span>
+              <span className="navbar-menu-item"> About Us</span>
+              <span className="navbar-menu-item"> Help Center</span>
+              <span className="navbar-menu-item"> Privacy </span>
             </div>
 
             {/* Action Buttons */}
@@ -45,7 +52,7 @@ export default function Navbar() {
                 className="navbar-signup-button"
                 onClick={() => setIsSignupModalOpen(true)}
               >
-                Sign Up
+                Get Started
               </button>
             </div>
           </div>
