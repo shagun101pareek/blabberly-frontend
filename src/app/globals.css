@@ -56,21 +56,18 @@ body {
   padding-left: 1rem;
   padding-right: 1rem;
 }
-
 @media (min-width: 640px) {
   .navbar-wrapper {
     padding-left: 1.5rem;
     padding-right: 1.5rem;
   }
 }
-
 @media (min-width: 1024px) {
   .navbar-wrapper {
     padding-left: 2rem;
     padding-right: 2rem;
   }
 }
-
 .navbar-content {
   display: flex;
   align-items: center;
@@ -78,24 +75,20 @@ body {
   height: 4.5rem;
   border-color: solid var(--color-rose-100);
 }
-
 .navbar-logo-wrapper {
   flex-shrink: 0;
 }
-
 .navbar-logo-link {
   display: flex;
   align-items: center;
   text-decoration: none;
 }
-
 .navbar-logo-image {
   width: 3rem;
   height: 3rem;
   object-fit: contain;
   flex-shrink: 0;
 }
-
 .navbar-logo {
   font-size: 1.5rem;
   font-weight: 800;
@@ -105,13 +98,11 @@ body {
   -webkit-text-fill-color: transparent;
   text-decoration: none;
 }
-
 .navbar-buttons {
   display: flex;
   align-items: center;
   gap: 1rem;
 }
-
 .navbar-login-button {
   padding: 0.5rem 1rem;
   font-size: 1rem;
@@ -124,11 +115,9 @@ body {
   cursor: pointer;
   transition: opacity 0.2s;
 }
-
 .navbar-login-button:hover {
   opacity: 0.8;
 }
-
 .navbar-signup-button {
   padding: 0.5rem 1.5rem;
   font-size: 1rem;
@@ -141,7 +130,6 @@ body {
   box-shadow: 0 10px 15px -3px var(--color-rose-200);
   transition: opacity 0.2s;
 }
-
 .navbar-signup-button:hover {
   opacity: 0.9;
 }
@@ -152,122 +140,109 @@ body {
   min-height: 100vh;
   background-color: #fef7fa;
 }
-
 .mainContent-wrapper {
   width: 100%;
   margin: 0 auto;
-  padding: 3rem 1rem;
+  padding: 0.5rem 0.5rem;
   text-align: center;
 }
-
 .mainContent-getStarted-button {
-  display: inline-block;
-  margin-top: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2rem;
   text-align: center;
   color: white;
   padding: 1rem 2rem;
-  font-size: 1.2rem;
-  font-weight: 500;
+  font-size: 1rem;
+  font-weight: 700;
   background: linear-gradient(to right, #ff215a, #f63399);
   border: none;
-  border-radius: 2.5rem;
+  border-radius: 1rem;
   cursor: pointer;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   transition: opacity 0.2s;
 }
-
+.mainContent-getStarted-text {
+  display: inline-block;
+}
+.mainContent-getStarted-arrow {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.5rem;
+  font-size: 1rem;
+}
+.mainContent-getStarted-button:hover {
+  background: linear-gradient(to right, var(--color-rose-600), var(--color-pink-600)) ;
+}
 .mainContent-learnMore-button {
   display: inline-block;
-  margin-top: 1rem;
+  margin-top: 2rem;
   text-align: center;
   padding: 1rem 2rem;
-  font-size: 1.2rem;
-  font-weight: 500;
+  font-size: 1rem;
+  font-weight: 700;
   background: white;
-  color: black;
+  color: #583141;
   border: 1px solid #e0e0e0;
-  border-radius: 2.5rem;
+  border-radius: 1rem;
   cursor: pointer;
   transition: opacity 0.2s;
   margin-left: 1rem;
   margin-right: 1rem;
 }
-
 .mainContent-learnMore-button:hover {
   opacity: 0.8;
 }
-
-.mainContent-getStarted-button:hover {
-  background: linear-gradient(to right, var(--color-rose-600), var(--color-pink-600)) ;
-}
-
-@media (min-width: 640px) {
-  .mainContent-wrapper {
-    padding: 4rem 1.5rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .mainContent-wrapper {
-    padding: 5rem 2rem;
-  }
-}
-
 .mainContent-logo-wrapper {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-top: 100px;
+  /* margin-bottom: 2rem; */
 }
-
 .mainContent-logo {
-  margin-top: 5rem;
+  margin-top: 50px;
   width: 120px;
   height: 120px;
   object-fit: contain;
+  /* margin-bottom: -50px; */
 }
-
 @media (min-width: 640px) {
   .mainContent-logo {
     width: 150px;
     height: 150px;
   }
 }
-
 @media (min-width: 1024px) {
   .mainContent-logo {
     width: 180px;
     height: 180px;
   }
 }
-
 .mainContent-heading {
-  font-size: 2.25rem;
+  font-size: 1rem;
   font-weight: 800;
+  letter-spacing: -1.8px;
   text-align: center;
   color: #000000;
-  line-height: 1.2;
 }
-
 .mainContent-heading-gradient {
   background: linear-gradient(to right, #ff2158, #f6349b);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
-
 @media (min-width: 640px) {
   .mainContent-heading {
     font-size: 3rem;
   }
 }
-
 @media (min-width: 1024px) {
   .mainContent-heading {
-    font-size: 4.75rem;
+    font-size: 4.5rem;
   }
 }
-
 .mainContent-subheading {
   margin-top: 1rem;
   text-align: center;
@@ -326,7 +301,7 @@ body {
   width: 64px;
   height: 64px;
   border-radius: 1rem;
-  background: linear-gradient(135deg, #9333ea 0%, #db2777 100%);
+  background: linear-gradient(135deg, #ff2158, #f6349b 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -433,7 +408,7 @@ body {
 .modal-title {
   font-size: 1.875rem;
   font-weight: bold;
-  background: linear-gradient(to right, #9333ea, #db2777);
+  background: linear-gradient(to right, #ff2158, #f6349b);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -519,7 +494,7 @@ textarea::placeholder {
   font-size: 0.9375rem;
   font-weight: 600;
   color: white;
-  background: linear-gradient(to right, #9333ea, #db2777);
+  background: linear-gradient(to right, #ff2158, #f6349b);
   border: none;
   border-radius: 0.75rem;
   cursor: pointer;
@@ -650,7 +625,7 @@ textarea::placeholder {
 }
 
 .chat-list-new-chat-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #ff2158, #f6349b 100%);
   color: white;
   border: none;
   border-radius: 50%;
