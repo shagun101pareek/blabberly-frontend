@@ -97,7 +97,7 @@ export default function ConnectionsPage() {
         />
 
         {/* Main Content with Sidebar */}
-        <div className="chat-main-container pt-16">
+        <div className="chat-main-container">
           <ChatSidebar activeTab="chats" />
           <div className="chat-container overflow-y-auto">
             <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8 w-full">
