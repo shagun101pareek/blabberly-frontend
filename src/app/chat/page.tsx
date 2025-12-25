@@ -102,7 +102,7 @@ export default function ChatPage() {
         />
 
         {/* Main chat layout */}
-        <div className="chat-main-container pt-16">
+        <div className="chat-main-container">
           <ChatSidebar activeTab={activeTab} onTabChange={handleTabChange} />
           <div className="chat-container">
             {showEmptyState ? (

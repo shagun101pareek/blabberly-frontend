@@ -27,6 +27,7 @@ html, body {
   height: 100%;
   margin: 0;
   padding: 0;
+  overflow: hidden;
 }
 
 body {
@@ -580,22 +581,342 @@ textarea::placeholder {
 /* ==================== CHAT PAGE STYLES ==================== */
 
 .chat-page {
-  min-height: 100vh;
+  height: 100vh;
   overflow: hidden;
   background: linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%);
+  position: relative;
 }
 
 .chat-main-container {
   display: flex;
-  height: calc(100vh - 4rem); /* account for top navbar */
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
 }
 
 .chat-container {
   display: flex;
   flex: 1;
-  height: 100%;
   margin: 0;
   background: #fff;
+  padding-top: 4rem; /* Account for fixed navbar */
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* =======================
+   Chat Navbar Layout
+======================= */
+
+.chat-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgb(226 232 240);
+}
+
+.chat-navbar-container {
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  height: 4rem;
+  /* max-width: 95rem; */
+  min-width: 100vw;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 4rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .chat-navbar-container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .chat-navbar-container {
+    padding-left: 8rem;
+    padding-right: 2rem;
+  }
+}
+
+/* =======================
+   Brand
+======================= */
+
+.chat-navbar-brand {
+  display: flex;
+  align-items: flex-start;
+  
+}
+
+.chat-navbar-logo {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  background: black;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+/* =======================
+   Right Section
+======================= */
+
+.chat-navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* =======================
+   Friends Button
+======================= */
+
+.friends-wrapper {
+  position: relative;
+}
+
+.friends-button {
+  position: relative;
+  display: flex;
+  height: 2.25rem;
+  width: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 1px solid rgb(226 232 240);
+  background-color: white;
+  color: rgb(100 116 139);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  transition: all 0.2s;
+}
+
+.friends-button:hover {
+  border-color: rgb(165 180 252);
+  color: rgb(99 102 241);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.friend-badge {
+  position: absolute;
+  top: -0.125rem;
+  right: -0.125rem;
+  display: inline-flex;
+  height: 1rem;
+  min-width: 1rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background-color: rgb(244 63 94);
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: white;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+/* =======================
+   Dropdown
+======================= */
+
+.friend-dropdown {
+  position: absolute;
+  right: 0;
+  margin-top: 0.5rem;
+  width: 20rem;
+  background-color: white;
+  border-radius: 0.5rem;
+  border: 1px solid rgb(226 232 240);
+  box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+  z-index: 30;
+  overflow: hidden;
+}
+
+.friend-dropdown-header {
+  padding: 0.75rem;
+  border-bottom: 1px solid rgb(226 232 240);
+}
+
+.friend-dropdown-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgb(15 23 42);
+}
+
+.friend-dropdown-body {
+  max-height: 24rem;
+  overflow-y: auto;
+}
+
+.friend-empty {
+  padding: 1rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: rgb(100 116 139);
+}
+
+.friend-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.friend-item {
+  padding: 0.75rem;
+  transition: background-color 0.2s;
+}
+
+.friend-item:hover {
+  background-color: rgb(248 250 252);
+}
+
+.friend-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* =======================
+   Avatar
+======================= */
+
+.friend-avatar {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  background-image: linear-gradient(to top right, #6366f1, #a855f7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.friend-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 9999px;
+  object-fit: cover;
+}
+
+/* =======================
+   User Info
+======================= */
+
+.friend-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.friend-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgb(15 23 42);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.friend-time {
+  font-size: 0.75rem;
+  color: rgb(100 116 139);
+}
+
+/* =======================
+   Actions
+======================= */
+
+.friend-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.accept-btn {
+  padding: 0.375rem;
+  border-radius: 9999px;
+  color: rgb(22 163 74);
+  transition: background-color 0.2s;
+}
+
+.accept-btn:hover {
+  background-color: rgb(220 252 231);
+}
+
+.reject-btn {
+  padding: 0.375rem;
+  border-radius: 9999px;
+  color: rgb(220 38 38);
+  transition: background-color 0.2s;
+}
+
+.reject-btn:hover {
+  background-color: rgb(254 226 226);
+}
+
+/* =======================
+   Footer
+======================= */
+
+.friend-dropdown-footer {
+  padding: 0.75rem;
+  border-top: 1px solid rgb(226 232 240);
+}
+
+.see-all-btn {
+  width: 100%;
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgb(99 102 241);
+}
+
+.see-all-btn:hover {
+  color: rgb(67 56 202);
+}
+
+/* =======================
+   Profile Button
+======================= */
+
+.profile-btn {
+  display: flex;
+  height: 2.25rem;
+  width: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background-image: linear-gradient(to top right, #6366f1, #a855f7);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  transition: box-shadow 0.2s;
+}
+
+.profile-btn:hover {
+  box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+
+
+.accept-spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid #16a34a;
+  border-top-color: transparent;
+  border-radius: 9999px;
+  animation: spin 1s linear infinite;
 }
 
 /* ==================== CHAT LIST STYLES ==================== */
@@ -678,7 +999,7 @@ textarea::placeholder {
 .chat-list-search-input:focus {
   outline: none;
   border-color: #667eea;
-  background: #fff;
+  background: linear-gradient(135deg, #ff2158, #f6349b 100%);
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
@@ -761,7 +1082,7 @@ textarea::placeholder {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #ff2158, #f6349b 100%);
   color: white;
   display: flex;
   align-items: center;
@@ -868,7 +1189,7 @@ textarea::placeholder {
   width: 50px;
   height: 50px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #ff2158, #f6349b 100%);
   color: white;
   display: flex;
   align-items: center;
@@ -920,7 +1241,7 @@ textarea::placeholder {
 }
 
 .chat-list-item-unread {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #ff2158, #f6349b 100%);
   color: white;
   border-radius: 50%;
   width: 22px;
@@ -944,7 +1265,7 @@ textarea::placeholder {
 }
 
 .chat-view-empty {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #ff2158, #f6349b 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -986,7 +1307,7 @@ textarea::placeholder {
   width: 45px;
   height: 45px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #ff2158, #f6349b 100%);
   color: white;
   display: flex;
   align-items: center;
@@ -1068,7 +1389,7 @@ textarea::placeholder {
 }
 
 .chat-message-sent .chat-message-bubble {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #ff2158, #f6349b 100%);
   color: white;
 }
 
@@ -1131,7 +1452,7 @@ textarea::placeholder {
 }
 
 .chat-view-send-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #ff2158, #f6349b 100%);
   border: none;
   color: white;
   cursor: pointer;
@@ -1200,14 +1521,16 @@ textarea::placeholder {
 /* ==================== CHAT SIDEBAR STYLES ==================== */
 
 .chat-sidebar {
-  width: 72px;
-  background: #f5f5f5;
+  width: 96px;
+  background:linear-gradient(135deg, #ff2158, #f6349b 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 16px 0;
   border-right: 1px solid #e8e8e8;
-  height: 100%;
+  height: 100vh;
+  position: relative;
+  z-index: 100;
 }
 
 .sidebar-top {
@@ -1262,14 +1585,14 @@ textarea::placeholder {
 }
 
 .sidebar-icon-button.active .sidebar-icon-wrapper {
-  background: linear-gradient(to right, #9333ea, #db2777 100%);
+  background: linear-gradient(135deg, #ff2158, #f6349b 100%);
   color: white;
   box-shadow: 0 4px 12px rgba(37, 211, 102, 0.35);
 }
 
 .sidebar-icon-button.active .sidebar-icon-wrapper:hover,
 .sidebar-icon-button.active .sidebar-icon-wrapper.hovered {
-  background: linear-gradient(135deg, #22c55e 0%, #0f766e 100%);
+  background: linear-gradient(135deg, #ff2158, #f6349b 100%);
   transform: scale(1.08);
 }
 
@@ -1277,7 +1600,7 @@ textarea::placeholder {
   position: absolute;
   top: -4px;
   right: -6px;
-  background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+  background: linear-gradient(135deg, #ff2158, #f6349b 100%);
   color: white;
   font-size: 10px;
   font-weight: 700;
@@ -1980,7 +2303,7 @@ textarea::placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #fdd7d7 0%, #ffffff 100%);
   padding: 2rem;
   position: relative;
   overflow: hidden;
