@@ -31,16 +31,18 @@ export default function ChatList({
   const rooms = chatRooms || [];
 
   return (
-    <div className="chat-list">
-        
-
-      <div className="chat-list-search">
+    <>
+    <div className="chat-list-search">
         <input
           type="text"
           placeholder="Search conversations..."
           className="chat-list-search-input"
         />
       </div>
+    <div className="chat-list">
+        
+
+      
 
       {/* Simple pending requests indicator at top of list (can be enhanced later) */}
       {friendRequests && friendRequests.length > 0 && (
@@ -107,6 +109,7 @@ export default function ChatList({
         )}
       </div>
     </div>
+    </>
   );
 }
 
