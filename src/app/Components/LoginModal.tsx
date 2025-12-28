@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Modal from './Modal';
 import { loginUserAPI } from '@/api/auth/auth/loginUser';
-import { setAuthToken } from '../utils/auth';
+import { setAuthToken, setUserId } from '../utils/auth';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -37,6 +37,10 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         // Store token if provided
         if (response.token) {
           setAuthToken(response.token);
+        }
+        // Store user ID if provided in response
+        if (response.userId || response.user?.id || response.user?._id) {
+          setUserId(response.userId || response.user?.id || response.user?._id);
         }
         // Close modal and reset form
         setEmail('');
