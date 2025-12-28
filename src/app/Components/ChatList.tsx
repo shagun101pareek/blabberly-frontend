@@ -95,9 +95,9 @@ export default function ChatList({
         {rooms.length === 0 && (!friendRequests || friendRequests.length === 0) && (
           <div className="chat-list-empty">
             <div className="chat-list-empty-text">No conversations yet</div>
-            <p className="chat-list-empty-subtext">
+            <div className="chat-list-empty-subtext">
               Start a new chat by finding friends.
-            </p>
+            </div>
             <button
               type="button"
               className="chat-list-empty-cta"

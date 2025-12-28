@@ -11,6 +11,7 @@ import ChatNavbar from '../Components/ChatNavbar';
 import { useFriendRequests } from '@/hooks/useFriendRequests';
 import { useFriends } from '@/hooks/useFriends';
 import { useChat } from '@/api/auth/chat/chat';
+import { getUserId } from '../utils/auth';
 
 export default function ChatPage() {
   const [activeTab, setActiveTab] = useState<'chats' | 'settings' | 'profile'>('chats');
@@ -39,9 +40,10 @@ export default function ChatPage() {
     getSelectedChat,
     markConnectionAsRead,
     hasChats,
+    fetchChatrooms,
   } = useChat();
 
-  const currentUserId = 'current_user'; // In real app, get from auth context
+  const currentUserId = getUserId() || 'current_user'; // Get from auth context
 
   const handleTabChange = (tab: 'chats' | 'settings' | 'profile') => {
     setActiveTab(tab);
@@ -61,17 +63,24 @@ export default function ChatPage() {
       // Add to friends list
       addFriend(newFriend);
       
-      // Create a new chat room for this friend
-      const newRoom = createChatRoom(
-        newFriend.id, 
-        newFriend.username, 
-        newFriend.avatar
-      );
+      // Refresh chatrooms to get the new chatroom from the server
+      await fetchChatrooms();
       
-      // Automatically select the new chat
-      selectChat(newRoom.id);
+      // Find the chatroom for this friend (it should now exist after fetch)
+      const friendChatRoom = chatRooms.find(room => room.friendId === newFriend.id);
+      if (friendChatRoom) {
+        selectChat(friendChatRoom.id);
+      } else {
+        // Fallback: Create a local chat room if server hasn't created one yet
+        const newRoom = createChatRoom(
+          newFriend.id, 
+          newFriend.username, 
+          newFriend.avatar
+        );
+        selectChat(newRoom.id);
+      }
     }
-  }, [acceptRequest, addFriend, createChatRoom, selectChat]);
+  }, [acceptRequest, addFriend, createChatRoom, selectChat, fetchChatrooms, chatRooms]);
 
   const handleRejectRequest = useCallback(async (requestId: string) => {
     await rejectRequest(requestId);

@@ -2597,6 +2597,29 @@ textarea::placeholder {
   margin: 0;
 }
 
+.chat-window-empty-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  padding: 0.75rem 1.25rem;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: white;
+  opacity: 0.85;
+  backdrop-filter: blur(10px);
+}
+
+.chat-window-empty-hint svg {
+  flex-shrink: 0;
+}
+
+.chat-window-empty-hint span {
+  line-height: 1.4;
+}
+
 .chat-window-header {
   background: white;
   padding: 1rem 1.5rem;
@@ -2923,15 +2946,36 @@ textarea::placeholder {
 
 /* ==================== CHAT LIST ADDITIONAL STYLES ==================== */
 
-.chat-list-empty {
+.chat-list {
   display: flex;
-  flex: 1;
+  flex-direction: column;
   height: 100%;
+}
+
+.chat-list-items {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-list-empty {
+  flex: 1;
+  display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 3rem 1.5rem;
   text-align: center;
+}
+.chat-list {
+  outline: 2px solid red;
+}
+
+.chat-list-items {
+  outline: 2px solid blue;
+}
+
+.chat-list-empty {
+  outline: 2px solid green;
 }
 
 
