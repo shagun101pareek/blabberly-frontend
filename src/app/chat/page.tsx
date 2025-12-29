@@ -12,11 +12,15 @@ import { useFriendRequests } from '@/hooks/useFriendRequests';
 import { useFriends } from '@/hooks/useFriends';
 import { useChat } from '@/api/auth/chat/chat';
 import { getUserId } from '../utils/auth';
+import { useSocketConnection } from '@/hooks/useSocketConnection';
 
 export default function ChatPage() {
   const [activeTab, setActiveTab] = useState<'chats' | 'settings' | 'profile'>('chats');
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   
+  // Initialize socket connection on page load
+  useSocketConnection();
+
   // Hooks
   const { 
     incomingRequests, 

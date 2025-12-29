@@ -1,9 +1,12 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
-import { getChatroomsAPI, type ChatroomResponse } from './getChatrooms';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { useChatrooms } from '@/hooks/useChatrooms';
+import { useMessages } from '@/hooks/useMessages';
+import { getSocket } from '@/app/utils/socket';
 import { getUserId } from '@/app/utils/auth';
 
+// Type definitions
 export interface Message {
   id: string;
   text: string;
@@ -24,67 +27,177 @@ export interface ChatRoom {
   isNewConnection?: boolean;
 }
 
+/**
+ * Main chat hook that integrates:
+ * - Chatrooms fetching (REST API)
+ * - Messages fetching (REST API)
+ * - Real-time messaging (Socket.IO)
+ */
 export function useChat() {
-  const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  
+  // Use chatrooms hook for fetching and managing chatrooms
+  const {
+    chatRooms,
+    isLoading: chatroomsLoading,
+    fetchChatrooms,
+    updateChatroom,
+    addChatroom,
+  } = useChatrooms();
 
-  // Transform API chatroom response to ChatRoom interface
-  const transformChatroom = useCallback((room: ChatroomResponse, currentUserId: string | null): ChatRoom | null => {
-    if (!currentUserId) return null;
+  // Use messages hook for fetching and managing messages for selected chat
+  const {
+    messages,
+    isLoading: messagesLoading,
+    addMessage: addMessageToHook,
+    fetchMessages,
+  } = useMessages(selectedChatId);
 
-    // For non-group chats, find the other participant
-    if (!room.isGroup && room.participants.length === 2) {
-      const otherParticipant = room.participants.find(p => p._id !== currentUserId);
-      if (!otherParticipant) return null;
+  // Ref to track socket listeners to avoid duplicates
+  const listenersSetupRef = useRef(false);
 
-      return {
-        id: room._id,
-        friendId: otherParticipant._id,
-        friendUsername: otherParticipant.username,
-        friendAvatar: undefined, // API doesn't provide avatar in participants
-        messages: [], // Messages will be loaded separately if needed
-        lastMessage: room.lastMessage?.text,
-        lastMessageTime: room.lastMessage?.createdAt ? new Date(room.lastMessage.createdAt) : (room.updatedAt ? new Date(room.updatedAt) : undefined),
-        unreadCount: 0, // API doesn't provide unread count, can be enhanced later
-        isNewConnection: false,
-      };
-    }
-
-    // For group chats, we can handle differently if needed
-    // For now, skip group chats or handle them with a group name
-    return null;
-  }, []);
-
-  // Fetch chatrooms from API
-  const fetchChatrooms = useCallback(async () => {
-    const currentUserId = getUserId();
-    if (!currentUserId) {
-      console.warn('No user ID found, cannot fetch chatrooms');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      const rooms = await getChatroomsAPI();
-      const transformedRooms = rooms
-        .map(room => transformChatroom(room, currentUserId))
-        .filter((room): room is ChatRoom => room !== null);
-      
-      setChatRooms(transformedRooms);
-    } catch (error) {
-      console.error('Failed to fetch chatrooms:', error);
-      // Don't throw, just log the error
-    } finally {
-      setIsLoading(false);
-    }
-  }, [transformChatroom]);
-
-  // Fetch chatrooms on mount
+  // Set up socket listeners for receiving messages
   useEffect(() => {
-    fetchChatrooms();
-  }, [fetchChatrooms]);
+    const socket = getSocket();
+    if (!socket || listenersSetupRef.current) return;
 
+    // Listen for new messages
+    const handleReceiveMessage = (data: {
+      chatroomId: string;
+      senderId: string;
+      content: string;
+      messageId?: string;
+      timestamp?: string;
+    }) => {
+      const currentUserId = getUserId();
+      if (!currentUserId) return;
+
+      // Create message object
+      const newMessage: Message = {
+        id: data.messageId || `msg_${Date.now()}`,
+        text: data.content,
+        senderId: data.senderId,
+        timestamp: data.timestamp ? new Date(data.timestamp) : new Date(),
+        isRead: false,
+      };
+
+      // If message belongs to currently open chat, add it to messages
+      if (selectedChatId === data.chatroomId) {
+        addMessageToHook(newMessage);
+      }
+
+      // Update chatroom with new last message
+      updateChatroom(data.chatroomId, {
+        lastMessage: data.content,
+        lastMessageTime: newMessage.timestamp,
+        // Increment unread count if not the current chat
+        unreadCount: selectedChatId === data.chatroomId ? 0 : 1,
+      });
+    };
+
+    // Listen for message sent acknowledgment (optional, for confirmation)
+    const handleMessageSent = (data: {
+      chatroomId: string;
+      messageId: string;
+    }) => {
+      // Message was successfully sent to server
+      // You can use this to update message status if needed
+      console.log('Message sent confirmation:', data);
+    };
+
+    // Set up listeners
+    socket.on('receiveMessage', handleReceiveMessage);
+    socket.on('messageSent', handleMessageSent);
+    listenersSetupRef.current = true;
+
+    // Cleanup listeners on unmount
+    return () => {
+      socket.off('receiveMessage', handleReceiveMessage);
+      socket.off('messageSent', handleMessageSent);
+      listenersSetupRef.current = false;
+    };
+  }, [selectedChatId, addMessageToHook, updateChatroom]);
+
+  // Update chatroom messages when messages change
+  useEffect(() => {
+    if (!selectedChatId) return;
+
+    updateChatroom(selectedChatId, {
+      messages: messages,
+    });
+  }, [messages, selectedChatId, updateChatroom]);
+
+  // Select a chatroom
+  const selectChat = useCallback((chatId: string) => {
+    setSelectedChatId(chatId);
+    
+    // Mark messages as read
+    updateChatroom(chatId, {
+      unreadCount: 0,
+    });
+  }, [updateChatroom]);
+
+  // Send a message via socket
+  const sendMessage = useCallback(async (chatId: string, text: string, senderId: string): Promise<boolean> => {
+    if (!text.trim()) return false;
+
+    const socket = getSocket();
+    if (!socket || !socket.connected) {
+      console.error('Socket not connected, cannot send message');
+      return false;
+    }
+
+    // Create optimistic message (shows immediately)
+    const optimisticMessage: Message = {
+      id: `temp_${Date.now()}`, // Temporary ID, will be replaced by server
+      text,
+      senderId,
+      timestamp: new Date(),
+      isRead: false,
+    };
+
+    // Add message optimistically to UI
+    if (selectedChatId === chatId) {
+      addMessageToHook(optimisticMessage);
+    }
+
+    // Update chatroom with optimistic message
+    updateChatroom(chatId, {
+      lastMessage: text,
+      lastMessageTime: optimisticMessage.timestamp,
+      isNewConnection: false,
+    });
+
+    // Emit message via socket
+    socket.emit('sendMessage', {
+      chatroomId: chatId,
+      senderId: senderId,
+      content: text,
+    });
+
+    return true;
+  }, [selectedChatId, addMessageToHook, updateChatroom]);
+
+  // Get selected chat with messages
+  const getSelectedChat = useCallback((): ChatRoom | null => {
+    if (!selectedChatId) return null;
+    
+    const chatroom = chatRooms.find(room => room.id === selectedChatId);
+    if (!chatroom) return null;
+
+    // Return chatroom with current messages
+    return {
+      ...chatroom,
+      messages: messages,
+    };
+  }, [chatRooms, selectedChatId, messages]);
+
+  // Get chat by friend ID
+  const getChatByFriendId = useCallback((friendId: string): ChatRoom | null => {
+    return chatRooms.find(room => room.friendId === friendId) || null;
+  }, [chatRooms]);
+
+  // Create a new chatroom (for new connections)
   const createChatRoom = useCallback((friendId: string, friendUsername: string, friendAvatar?: string): ChatRoom => {
     const newRoom: ChatRoom = {
       id: `chat_${friendId}_${Date.now()}`,
@@ -96,93 +209,35 @@ export function useChat() {
       isNewConnection: true,
     };
 
-    setChatRooms(prev => {
-      // Check if chat already exists with this friend
-      const existing = prev.find(r => r.friendId === friendId);
-      if (existing) {
-        return prev;
-      }
-      return [newRoom, ...prev];
-    });
-
+    addChatroom(newRoom);
     return newRoom;
-  }, []);
+  }, [addChatroom]);
 
-  const selectChat = useCallback((chatId: string) => {
-    setSelectedChatId(chatId);
-    
-    // Mark messages as read
-    setChatRooms(prev => 
-      prev.map(room => 
-        room.id === chatId 
-          ? { ...room, unreadCount: 0 }
-          : room
-      )
-    );
-  }, []);
-
-  const sendMessage = useCallback(async (chatId: string, text: string, senderId: string): Promise<boolean> => {
-    if (!text.trim()) return false;
-
-    const newMessage: Message = {
-      id: `msg_${Date.now()}`,
-      text,
-      senderId,
-      timestamp: new Date(),
-      isRead: false,
-    };
-
-    setChatRooms(prev => 
-      prev.map(room => {
-        if (room.id === chatId) {
-          return {
-            ...room,
-            messages: [...room.messages, newMessage],
-            lastMessage: text,
-            lastMessageTime: new Date(),
-            isNewConnection: false,
-          };
-        }
-        return room;
-      })
-    );
-
-    return true;
-  }, []);
-
-  const getSelectedChat = useCallback((): ChatRoom | null => {
-    return chatRooms.find(room => room.id === selectedChatId) || null;
-  }, [chatRooms, selectedChatId]);
-
-  const getChatByFriendId = useCallback((friendId: string): ChatRoom | null => {
-    return chatRooms.find(room => room.friendId === friendId) || null;
-  }, [chatRooms]);
-
+  // Mark connection as read
   const markConnectionAsRead = useCallback((chatId: string) => {
-    setChatRooms(prev => 
-      prev.map(room => 
-        room.id === chatId 
-          ? { ...room, isNewConnection: false }
-          : room
-      )
-    );
-  }, []);
+    updateChatroom(chatId, {
+      isNewConnection: false,
+    });
+  }, [updateChatroom]);
 
   return {
     chatRooms,
-    setChatRooms,
     selectedChatId,
-    setSelectedChatId,
     selectChat,
     createChatRoom,
     sendMessage,
     getSelectedChat,
     getChatByFriendId,
     markConnectionAsRead,
-    isLoading,
+    isLoading: chatroomsLoading || messagesLoading,
     hasChats: chatRooms.length > 0,
-    fetchChatrooms, // Expose fetch function to allow manual refresh
+    fetchChatrooms,
+    // Expose setChatRooms for backward compatibility if needed
+    setChatRooms: (rooms: ChatRoom[]) => {
+      // This is a no-op since chatrooms are managed by useChatrooms hook
+      // Kept for backward compatibility
+      console.warn('setChatRooms is deprecated, use updateChatroom or addChatroom instead');
+    },
+    setSelectedChatId,
   };
 }
-
-
