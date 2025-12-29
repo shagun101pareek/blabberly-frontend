@@ -1,11 +1,11 @@
 'use client';
 
 import Image from 'next/image';
-import type { ChatRoom } from '@/api/auth/chat/chat';
+import type { Chatroom } from '@/hooks/useChatrooms';
 import type { FriendRequest } from '@/hooks/useFriendRequests';
 
 interface ChatListProps {
-  chatRooms: ChatRoom[];
+  chatRooms: Chatroom[];
   selectedChatId: string | null;
   onSelectChat: (chatId: string) => void;
   friendRequests?: FriendRequest[];
@@ -84,9 +84,6 @@ export default function ChatList({
                 <p className="chat-list-item-message">
                   {room.lastMessage || 'Say hi to your new friend!'}
                 </p>
-                {room.unreadCount > 0 && (
-                  <span className="chat-list-item-unread">{room.unreadCount}</span>
-                )}
               </div>
             </div>
           </div>
