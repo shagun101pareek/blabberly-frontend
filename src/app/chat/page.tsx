@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import ChatSidebar from '../Components/ChatSidebar';
 import ChatList from '../Components/ChatList';
 import ChatWindow from '../Components/ChatWindow';
@@ -10,14 +10,12 @@ import ProtectedRoute from '../Components/ProtectedRoute';
 import ChatNavbar from '../Components/ChatNavbar';
 import { useFriendRequests } from '@/hooks/useFriendRequests';
 import { useFriends } from '@/hooks/useFriends';
-import { useChatrooms } from '@/hooks/useChatrooms';
-import { initializeSocket, disconnectSocket } from '../utils/socket';
+import { useChat } from '@/api/auth/chat/chat';
 import { getUserId } from '../utils/auth';
 
 export default function ChatPage() {
   const [activeTab, setActiveTab] = useState<'chats' | 'settings' | 'profile'>('chats');
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
-  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   
   // Hooks
   const { 
@@ -34,25 +32,18 @@ export default function ChatPage() {
   } = useFriends();
   
   const {
-    chatrooms,
-    isLoading: chatroomsLoading,
+    chatRooms,
+    selectedChatId,
+    selectChat,
+    createChatRoom,
+    sendMessage,
+    getSelectedChat,
+    markConnectionAsRead,
+    hasChats,
     fetchChatrooms,
-    updateLastMessage,
-  } = useChatrooms();
+  } = useChat();
 
-  const currentUserId = getUserId();
-
-  // Initialize socket connection on mount
-  useEffect(() => {
-    if (currentUserId) {
-      initializeSocket();
-    }
-
-    // Cleanup on unmount
-    return () => {
-      disconnectSocket();
-    };
-  }, [currentUserId]);
+  const currentUserId = getUserId() || 'current_user'; // Get from auth context
 
   const handleTabChange = (tab: 'chats' | 'settings' | 'profile') => {
     setActiveTab(tab);
@@ -76,25 +67,36 @@ export default function ChatPage() {
       await fetchChatrooms();
       
       // Find the chatroom for this friend (it should now exist after fetch)
-      const friendChatRoom = chatrooms.find(room => room.friendId === newFriend.id);
+      const friendChatRoom = chatRooms.find(room => room.friendId === newFriend.id);
       if (friendChatRoom) {
-        setSelectedChatId(friendChatRoom.id);
+        selectChat(friendChatRoom.id);
+      } else {
+        // Fallback: Create a local chat room if server hasn't created one yet
+        const newRoom = createChatRoom(
+          newFriend.id, 
+          newFriend.username, 
+          newFriend.avatar
+        );
+        selectChat(newRoom.id);
       }
     }
-  }, [acceptRequest, addFriend, fetchChatrooms, chatrooms]);
+  }, [acceptRequest, addFriend, createChatRoom, selectChat, fetchChatrooms, chatRooms]);
 
   const handleRejectRequest = useCallback(async (requestId: string) => {
     await rejectRequest(requestId);
   }, [rejectRequest]);
 
-  const handleSelectChat = useCallback((chatId: string) => {
-    setSelectedChatId(chatId);
-  }, []);
+  const handleSendMessage = useCallback((chatId: string, text: string) => {
+    sendMessage(chatId, text, currentUserId);
+  }, [sendMessage, currentUserId]);
 
-  const selectedChat = chatrooms.find(room => room.id === selectedChatId) || null;
+  const handleSelectChat = useCallback((chatId: string) => {
+    selectChat(chatId);
+  }, [selectChat]);
+
+  const selectedChat = getSelectedChat();
 
   // Determine what to show in the main area
-  const hasChats = chatrooms.length > 0;
   const showEmptyState = !hasFriends && !hasChats && incomingRequests.length === 0;
 
   return (
@@ -132,16 +134,17 @@ export default function ChatPage() {
             ) : (
               <>
                 <ChatList 
-                  chatRooms={chatrooms}
+                  chatRooms={chatRooms}
                   selectedChatId={selectedChatId}
                   onSelectChat={handleSelectChat}
                   friendRequests={incomingRequests}
                   onNewChat={handleOpenSearchModal}
                 />
                 <ChatWindow
-                  chatroom={selectedChat}
-                  currentUserId={currentUserId || ''}
-                  onUpdateLastMessage={updateLastMessage}
+                  chatRoom={selectedChat}
+                  currentUserId={currentUserId}
+                  onSendMessage={handleSendMessage}
+                  onMarkAsRead={markConnectionAsRead}
                 />
               </>
             )}
