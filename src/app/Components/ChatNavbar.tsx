@@ -84,6 +84,15 @@ export default function ChatNavbar({
     router.push('/connections');
   };
 
+  const handleAddFriends = () => {
+    setIsDropdownOpen(false);
+    router.push('/connections');
+  };
+
+  const handleButtonClick = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+  };
+
   return (
     <header className="chat-navbar">
       <div className="chat-navbar-container">
@@ -98,7 +107,7 @@ export default function ChatNavbar({
           <div className="friends-wrapper" ref={dropdownRef}>
             <button
               type="button"
-              onClick={() => router.push('/connections')}
+              onClick={handleButtonClick}
               className="friends-button"
               aria-label="Friends"
             >
@@ -143,16 +152,25 @@ export default function ChatNavbar({
               <div className="friend-dropdown">
                 <div className="friend-dropdown-header">
                   <h3 className="friend-dropdown-title">Friend Requests</h3>
+                  {friendRequests.length > 0 && (
+                    <span className="friend-dropdown-badge">New</span>
+                  )}
                 </div>
 
                 <div className="friend-dropdown-body">
                   {friendRequests.length === 0 ? (
                     <div className="friend-empty">
-                      No friend requests
+                      <p className="friend-empty-text">No pending request</p>
+                      <button
+                        onClick={handleAddFriends}
+                        className="friend-add-friends-btn"
+                      >
+                        Add friends
+                      </button>
                     </div>
                   ) : (
                     <div className="friend-list">
-                      {friendRequests.slice(0, 5).map(request => (
+                      {friendRequests.slice(0, 3).map(request => (
                         <div key={request.id} className="friend-item">
                           <div className="friend-row">
                             {/* Avatar */}
@@ -174,51 +192,36 @@ export default function ChatNavbar({
                               <p className="friend-name">
                                 {request.senderUsername}
                               </p>
-                              <p className="friend-time">
-                                {formatTimeAgo(request.createdAt)}
+                              <p className="friend-mutual">
+                                {/* Mutual friends count - placeholder for now */}
+                                {/* {request.mutualFriends || 0} mutual friends */}
                               </p>
                             </div>
+                          </div>
 
-                            {/* Actions */}
-                            <div className="friend-actions">
-                              <button
-                                onClick={() => handleAccept(request.id)}
-                                disabled={processingIds.has(request.id) || isLoading}
-                                className="accept-btn"
-                                title="Accept"
-                              >
-                                {processingIds.has(request.id) ? (
-                                 <div className="accept-spinner" />
-                                ) : (
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                                    <path
-                                      d="M20 6L9 17L4 12"
-                                      stroke="currentColor"
-                                      strokeWidth="2.5"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                    />
-                                  </svg>
-                                )}
-                              </button>
+                          {/* Actions */}
+                          <div className="friend-item-actions">
+                            <button
+                              onClick={() => handleAccept(request.id)}
+                              disabled={processingIds.has(request.id) || isLoading}
+                              className="friend-accept-btn"
+                              title="Accept"
+                            >
+                              {processingIds.has(request.id) ? (
+                                <div className="accept-spinner" />
+                              ) : (
+                                'Accept'
+                              )}
+                            </button>
 
-                              <button
-                                onClick={() => handleReject(request.id)}
-                                disabled={processingIds.has(request.id) || isLoading}
-                                className="reject-btn"
-                                title="Reject"
-                              >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                                  <path
-                                    d="M18 6L6 18M6 6L18 18"
-                                    stroke="currentColor"
-                                    strokeWidth="2.5"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                  />
-                                </svg>
-                              </button>
-                            </div>
+                            <button
+                              onClick={() => handleReject(request.id)}
+                              disabled={processingIds.has(request.id) || isLoading}
+                              className="friend-decline-btn"
+                              title="Decline"
+                            >
+                              Decline
+                            </button>
                           </div>
                         </div>
                       ))}
@@ -232,7 +235,7 @@ export default function ChatNavbar({
                       onClick={handleSeeAll}
                       className="see-all-btn"
                     >
-                      See all
+                      See all requests
                     </button>
                   </div>
                 )}

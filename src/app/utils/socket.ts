@@ -50,7 +50,7 @@ export function getSocket(): Socket | null {
     
     // Register user with socket server
     if (userId) {
-      socket.emit('register', userId);
+      socket?.emit('register', userId);
     }
   });
 
@@ -81,4 +81,5 @@ export function disconnectSocket(): void {
 export function isSocketConnected(): boolean {
   return socket?.connected ?? false;
 }
+
 

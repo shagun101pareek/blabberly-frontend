@@ -12,7 +12,7 @@ export interface Message {
   text: string;
   senderId: string;
   timestamp: Date;
-  isRead?: boolean;
+  isRead: boolean;
 }
 
 export interface ChatRoom {

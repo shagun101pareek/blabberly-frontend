@@ -207,28 +207,20 @@ export default function ChatWindow({
 
       {/* Input Area */}
       <div className="chat-window-input-container">
-        <button className="chat-window-input-btn">
+        <button className="chat-window-input-btn chat-window-add-btn">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M21.44 11.05L12.25 20.24C10.45 22.04 7.51 22.04 5.71 20.24C3.91 18.44 3.91 15.5 5.71 13.7L14.9 4.51C16.03 3.38 17.85 3.38 18.98 4.51C20.11 5.64 20.11 7.46 18.98 8.59L9.79 17.78C9.22 18.35 8.32 18.35 7.75 17.78C7.18 17.21 7.18 16.31 7.75 15.74L16.94 6.55" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M12 5V19M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
           </svg>
         </button>
         <input
           ref={inputRef}
           type="text"
           className="chat-window-input"
-          placeholder="Type a message..."
+          placeholder="Write a message..."
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyPress={handleKeyPress}
         />
-        <button className="chat-window-input-btn">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
-            <path d="M8 14C8 14 9.5 16 12 16C14.5 16 16 14 16 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            <circle cx="9" cy="10" r="1" fill="currentColor"/>
-            <circle cx="15" cy="10" r="1" fill="currentColor"/>
-          </svg>
-        </button>
         <button 
           className="chat-window-send-btn"
           onClick={handleSendMessage}
