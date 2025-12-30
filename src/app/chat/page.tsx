@@ -121,8 +121,7 @@ export default function ChatPage() {
             {showEmptyState ? (
               <>
                 {/* Empty Chat List */}
-                <div className="chat-list">
-               
+                <div className="chat-list-sidebar">
                   <div className="chat-list-search">
                     <input 
                       type="text" 
@@ -131,6 +130,7 @@ export default function ChatPage() {
                       disabled
                     />
                   </div>
+                  <div className="chat-list"></div>
                 </div>
                 {/* Empty State View */}
                 <EmptyChatView onFindFriends={handleOpenSearchModal} />

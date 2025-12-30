@@ -2,15 +2,16 @@ import { getAuthToken } from "@/app/utils/auth";
 
 export interface MessageResponse {
   _id: string;
-  text: string;
-  sender: string;
+  content: string;
+  sender: {
+    _id: string;
+    username: string;
+  } | string;
   chatroom: string;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface GetMessagesResponse {
-  messages: MessageResponse[];
+  readBy?: string[];
+  __v?: number;
 }
 
 /**
@@ -40,7 +41,17 @@ export const getMessagesAPI = async (chatroomId: string): Promise<MessageRespons
     throw new Error(errorMessage);
   }
 
-  const responseData = data as GetMessagesResponse;
-  return responseData.messages || [];
+  // API returns a direct array, not wrapped in { messages: [...] }
+  if (Array.isArray(data)) {
+    return data;
+  }
+  
+  // Fallback: if it's wrapped, try to extract messages
+  if (data.messages && Array.isArray(data.messages)) {
+    return data.messages;
+  }
+  
+  return [];
 };
+
 
