@@ -29,6 +29,21 @@ export default function ChatSidebar({ activeTab = 'chats', onTabChange }: ChatSi
     router.push('/');
   };
 
+  const handleDiscoverClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Discover button clicked'); // Debug log
+    console.log('Current pathname:', window.location.pathname);
+    
+    // Use window.location.href for reliable navigation
+    // This ensures navigation happens even if Next.js router has issues
+    if (window.location.pathname !== '/connections') {
+      window.location.href = '/connections';
+    } else {
+      console.log('Already on connections page');
+    }
+  };
+
   return (
     <div className="chat-sidebar">
       {/* Top Section - Chats */}
@@ -53,6 +68,59 @@ export default function ChatSidebar({ activeTab = 'chats', onTabChange }: ChatSi
             </svg>
             {/* Notification Badge */}
             <span className="sidebar-badge">99+</span>
+          </div>
+        </button>
+
+        {/* Friends/Discover Button */}
+        <button
+          type="button"
+          className="sidebar-icon-button"
+          onClick={handleDiscoverClick}
+          onMouseEnter={() => setHoveredItem('discover')}
+          onMouseLeave={() => setHoveredItem(null)}
+          title="Discover"
+        >
+          <div 
+            className={`sidebar-icon-wrapper ${hoveredItem === 'discover' ? 'hovered' : ''}`}
+          >
+            {/* Friends/Discover Icon - Group of People */}
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M16 21V19C16 16.7909 14.2091 15 12 15H5C2.79086 15 1 16.7909 1 19V21"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <circle
+                cx="8.5"
+                cy="7"
+                r="4"
+                stroke="currentColor"
+                strokeWidth="2"
+              />
+              <path
+                d="M20 8V14M17 11H23"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M16 21V19C16 16.7909 17.7909 15 20 15C22.2091 15 24 16.7909 24 19V21"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <circle
+                cx="20"
+                cy="7"
+                r="3"
+                stroke="currentColor"
+                strokeWidth="2"
+              />
+            </svg>
           </div>
         </button>
       </div>

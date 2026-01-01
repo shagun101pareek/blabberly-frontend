@@ -785,6 +785,11 @@ textarea::placeholder {
   gap: 1rem;
 }
 
+.friend-empty-icon {
+  color: rgb(203 213 225);
+  opacity: 0.6;
+}
+
 .friend-empty-text {
   font-size: 0.875rem;
   color: rgb(100 116 139);
@@ -1647,6 +1652,8 @@ textarea::placeholder {
   padding: 0;
   position: relative;
   outline: none;
+  pointer-events: auto;
+  z-index: 101;
 }
 
 .sidebar-icon-wrapper {
@@ -1659,6 +1666,7 @@ textarea::placeholder {
   color: #6b6b6b;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  pointer-events: none;
 }
 
 .sidebar-icon-wrapper:hover,

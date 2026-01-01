@@ -26,7 +26,8 @@ export default function ChatPage() {
     incomingRequests, 
     acceptRequest, 
     rejectRequest,
-    isLoading: friendRequestsLoading 
+    isLoading: friendRequestsLoading,
+    fetchPendingRequests
   } = useFriendRequests();
   
   const { 
@@ -107,12 +108,7 @@ export default function ChatPage() {
     <ProtectedRoute>
       <div className="chat-page flex flex-col">
         {/* Top Navbar (Chat Page) */}
-        <ChatNavbar
-          friendRequests={incomingRequests}
-          onAcceptRequest={handleAcceptRequest}
-          onRejectRequest={handleRejectRequest}
-          isLoading={friendRequestsLoading}
-        />
+        <ChatNavbar />
 
         {/* Main chat layout */}
         <div className="chat-main-container">
