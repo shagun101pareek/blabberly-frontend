@@ -20,6 +20,7 @@ export default function ConnectionsPage() {
     acceptRequest,
     rejectRequest,
     isLoading: friendRequestsLoading,
+    fetchPendingRequests,
   } = useFriendRequests();
 
   const { suggestions, sendFriendRequest, isLoading: suggestionsLoading } = useFriendSuggestions();
@@ -89,12 +90,7 @@ export default function ConnectionsPage() {
     <ProtectedRoute>
       <div className="chat-page flex flex-col">
         {/* Navbar */}
-        <ChatNavbar
-          friendRequests={incomingRequests}
-          onAcceptRequest={handleAcceptRequest}
-          onRejectRequest={handleRejectRequest}
-          isLoading={friendRequestsLoading}
-        />
+        <ChatNavbar />
 
         {/* Main Content with Sidebar */}
         <div className="chat-main-container">
@@ -104,7 +100,7 @@ export default function ConnectionsPage() {
             {/* Page Header */}
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-slate-900">Connections</h1>
-              <p className="mt-2 text-sm text-slate-600">
+              <p className="mt-2 text-sm text-slate-600">̵
                 Manage your friend requests and discover new connections
               </p>
             </div>
