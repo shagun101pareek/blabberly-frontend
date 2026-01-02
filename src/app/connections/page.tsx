@@ -1,18 +1,23 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import ProtectedRoute from '../Components/ProtectedRoute';
 import ChatNavbar from '../Components/ChatNavbar';
 import ChatSidebar from '../Components/ChatSidebar';
+import UserSearchInput from '../Components/UserSearchInput';
+import UserSearchResults from '../Components/UserSearchResults';
 import { useFriendRequests } from '@/hooks/useFriendRequests';
 import { useFriendSuggestions } from '@/hooks/useFriendSuggestions';
 import { useFriends } from '@/hooks/useFriends';
+import { useUserSearch } from '@/hooks/useUserSearch';
 
 export default function ConnectionsPage() {
   const router = useRouter();
   const [processingRequestIds, setProcessingRequestIds] = useState<Set<string>>(new Set());
   const [processingSuggestionIds, setProcessingSuggestionIds] = useState<Set<string>>(new Set());
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
 
   // Hooks
   const {
@@ -26,6 +31,36 @@ export default function ConnectionsPage() {
   const { suggestions, sendFriendRequest, isLoading: suggestionsLoading } = useFriendSuggestions();
 
   const { addFriend } = useFriends();
+
+  // User search hook
+  const {
+    searchQuery,
+    searchResults,
+    isLoading: isSearchLoading,
+    error: searchError,
+    setSearchQuery,
+    clearResults,
+  } = useUserSearch();
+
+  // Handle click outside to close search results
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target as Node)
+      ) {
+        setIsSearchFocused(false);
+      }
+    };
+
+    if (isSearchFocused) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isSearchFocused]);
 
   const handleAcceptRequest = useCallback(async (requestId: string) => {
     setProcessingRequestIds(prev => new Set([...prev, requestId]));
@@ -106,29 +141,20 @@ export default function ConnectionsPage() {
             </div>
 
             {/* Search Bar */}
-            <div className="mb-8">
-              <div className="connections-search-container">
-                <svg
-                  className="connections-search-icon"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="11" cy="11" r="8"></circle>
-                  <path d="m21 21-4.35-4.35"></path>
-                </svg>
-                <input
-                  type="text"
-                  placeholder="Search connections..."
-                  className="connections-search-input"
-                  disabled
+            <div className="mb-8 connections-search-wrapper" ref={searchContainerRef}>
+              <UserSearchInput
+                value={searchQuery}
+                onChange={setSearchQuery}
+                onFocus={() => setIsSearchFocused(true)}
+                placeholder="Search users by name or username"
+              />
+              {isSearchFocused && (searchQuery.length >= 2 || isSearchLoading || searchError) && (
+                <UserSearchResults
+                  results={searchResults}
+                  isLoading={isSearchLoading}
+                  error={searchError}
                 />
-              </div>
+              )}
             </div>
 
             {/* Friend Requests Section */}
