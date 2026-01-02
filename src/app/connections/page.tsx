@@ -96,13 +96,39 @@ export default function ConnectionsPage() {
         <div className="chat-main-container">
           <ChatSidebar activeTab="chats" />
           <div className="chat-container overflow-y-auto">
-            <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8 w-full">
+            <div className="connections-page-container">
             {/* Page Header */}
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-slate-900">Connections</h1>
+            <div className="mb-6">
+              <h1 className="text-3xl mt-5 font-bold text-slate-900">Connections</h1>
               <p className="mt-2 text-sm text-slate-600">̵
                 Manage your friend requests and discover new connections
               </p>
+            </div>
+
+            {/* Search Bar */}
+            <div className="mb-8">
+              <div className="connections-search-container">
+                <svg
+                  className="connections-search-icon"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search connections..."
+                  className="connections-search-input"
+                  disabled
+                />
+              </div>
             </div>
 
             {/* Friend Requests Section */}
@@ -117,7 +143,7 @@ export default function ConnectionsPage() {
               </div>
 
               {incomingRequests.length === 0 ? (
-                <div className="rounded-lg border border-slate-200 bg-white p-8 text-center">
+                <div className="connections-empty-state">
                   <svg
                     className="mx-auto h-12 w-12 text-slate-400"
                     fill="none"
@@ -138,11 +164,11 @@ export default function ConnectionsPage() {
                   {incomingRequests.map((request) => (
                     <div
                       key={request.id}
-                      className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow"
+                      className="connections-card"
                     >
                       <div className="flex items-center gap-4">
                         {/* Avatar */}
-                        <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-lg font-semibold">
+                        <div className="connections-avatar-small">
                           {request.senderAvatar ? (
                             <img
                               src={request.senderAvatar}
@@ -169,11 +195,11 @@ export default function ConnectionsPage() {
                           <button
                             onClick={() => handleAcceptRequest(request.id)}
                             disabled={processingRequestIds.has(request.id) || friendRequestsLoading}
-                            className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            className="connections-accept-button"
                           >
                             {processingRequestIds.has(request.id) ? (
                               <>
-                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                <div className="connections-spinner"></div>
                                 <span>Accepting...</span>
                               </>
                             ) : (
@@ -199,7 +225,7 @@ export default function ConnectionsPage() {
                           <button
                             onClick={() => handleRejectRequest(request.id)}
                             disabled={processingRequestIds.has(request.id) || friendRequestsLoading}
-                            className="px-4 py-2 rounded-lg border border-slate-300 bg-white text-slate-700 text-sm font-medium hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="connections-reject-button"
                           >
                             Reject
                           </button>
@@ -223,7 +249,7 @@ export default function ConnectionsPage() {
               </div>
 
               {suggestions.length === 0 ? (
-                <div className="rounded-lg border border-slate-200 bg-white p-8 text-center">
+                <div className="connections-empty-state">
                   <svg
                     className="mx-auto h-12 w-12 text-slate-400"
                     fill="none"
@@ -240,16 +266,40 @@ export default function ConnectionsPage() {
                   <p className="mt-4 text-sm text-slate-500">No friend suggestions available</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {suggestions.map((suggestion, index) => (
                     <div
                       key={suggestion.id || `suggestion-${index}`}
-                      className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow"
+                      className="connections-card"
                     >
+                      {/* Dismiss Button */}
+                      <button
+                        className="connections-card-dismiss"
+                        onClick={() => {
+                          // Remove suggestion from list
+                          // You can implement this functionality if needed
+                        }}
+                        aria-label="Dismiss suggestion"
+                      >
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <line x1="18" y1="6" x2="6" y2="18"></line>
+                          <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                      </button>
+
                       <div className="flex flex-col items-center text-center">
-                        {/* Avatar */}
-                        <div className="relative mb-3">
-                          <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xl font-semibold">
+                        {/* Avatar with Mutual Friends Indicator */}
+                        <div className="relative mb-4">
+                          <div className="connections-avatar-large">
                             {suggestion.avatar ? (
                               <img
                                 src={suggestion.avatar}
@@ -260,60 +310,62 @@ export default function ConnectionsPage() {
                               <span>{suggestion.username.charAt(0).toUpperCase()}</span>
                             )}
                           </div>
-                          {suggestion.isOnline && (
-                            <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
-                          )}
+                          {/* Mutual Friends Indicator */}
+                          <div className="connections-mutual-friends-badge">
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                              <circle cx="9" cy="7" r="4"></circle>
+                              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                          </div>
                         </div>
 
                         {/* Username */}
-                        <p className="text-base font-medium text-slate-900 mb-1">
+                        <p className="connections-card-username">
                           {suggestion.username}
                         </p>
-                        <p className="text-xs text-slate-500 mb-4">
-                          {suggestion.isOnline ? 'Online' : 'Offline'}
+                        
+                        {/* Mutual Friends Count */}
+                        <p className="connections-card-mutual">
+                          {Math.floor(Math.random() * 10) + 1} Mutual Friends
                         </p>
 
-                        {/* Add Friend Button */}
+                        {/* Connect Button */}
                         <button
                           onClick={() => handleSendFriendRequest(suggestion.id)}
                           disabled={processingSuggestionIds.has(suggestion.id) || suggestionsLoading}
-                          className="w-full px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                          className="connections-connect-button"
                         >
                           {processingSuggestionIds.has(suggestion.id) ? (
                             <>
-                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                              <div className="connections-spinner"></div>
                               <span>Sending...</span>
                             </>
                           ) : (
                             <>
+                              <span>Connect</span>
                               <svg
                                 width="16"
                                 height="16"
                                 viewBox="0 0 24 24"
                                 fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
                               >
-                                <path
-                                  d="M20 8V14M17 11H23"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                                <path
-                                  d="M16 21V19C16 16.7909 14.2091 15 12 15H5C2.79086 15 1 16.7909 1 19V21"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                />
-                                <circle
-                                  cx="8.5"
-                                  cy="7"
-                                  r="4"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                />
+                                <polyline points="20 6 9 17 4 12"></polyline>
                               </svg>
-                              <span>Add Friend</span>
                             </>
                           )}
                         </button>
