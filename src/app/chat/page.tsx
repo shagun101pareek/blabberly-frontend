@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react';
 import ChatSidebar from '../Components/ChatSidebar';
 import ChatList from '../Components/ChatList';
 import ChatWindow from '../Components/ChatWindow';
-import EmptyChatView from '../Components/EmptyChatView';
+// import EmptyChatView from '../Components/EmptyChatView';
 import SearchUserModal from '../Components/SearchUserModal';
 import ProtectedRoute from '../Components/ProtectedRoute';
 import ChatNavbar from '../Components/ChatNavbar';
@@ -46,6 +46,7 @@ export default function ChatPage() {
     markConnectionAsRead,
     hasChats,
     fetchChatrooms,
+    isLoading: chatLoading,
   } = useChat();
 
   const currentUserId = getUserId() || 'current_user'; // Get from auth context
@@ -101,8 +102,12 @@ export default function ChatPage() {
 
   const selectedChat = getSelectedChat();
 
+  // Check if we're still loading initial data
+  const isInitialLoading = chatLoading || friendRequestsLoading;
+
   // Determine what to show in the main area
-  const showEmptyState = !hasFriends && !hasChats && incomingRequests.length === 0;
+  // Only show empty state if we're not loading AND have no data
+  const showEmptyState = !isInitialLoading && !hasFriends && !hasChats && incomingRequests.length === 0;
 
   return (
     <ProtectedRoute>
@@ -114,7 +119,27 @@ export default function ChatPage() {
         <div className="chat-main-container">
           <ChatSidebar activeTab={activeTab} onTabChange={handleTabChange} />
           <div className="chat-container">
-            {showEmptyState ? (
+            {isInitialLoading ? (
+              <>
+                {/* Loading State - Show skeleton or loading indicator */}
+                <div className="chat-list-sidebar">
+                  <div className="chat-list-search">
+                    <input 
+                      type="text" 
+                      placeholder="Search conversations..."
+                      className="chat-list-search-input"
+                      disabled
+                    />
+                  </div>
+                  <div className="chat-list"></div>
+                </div>
+                <div className="chat-window chat-window-empty">
+                  <div className="chat-window-empty-content">
+                    <div className="connections-spinner" style={{ margin: '0 auto' }}></div>
+                  </div>
+                </div>
+              </>
+            ) : showEmptyState ? (
               <>
                 {/* Empty Chat List */}
                 <div className="chat-list-sidebar">
@@ -129,7 +154,7 @@ export default function ChatPage() {
                   <div className="chat-list"></div>
                 </div>
                 {/* Empty State View */}
-                <EmptyChatView onFindFriends={handleOpenSearchModal} />
+                {/* <EmptyChatView onFindFriends={handleOpenSearchModal} /> */}
               </>
             ) : (
               <>
