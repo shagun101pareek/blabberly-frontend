@@ -5,6 +5,8 @@ import { useChatrooms } from '@/hooks/useChatrooms';
 import { useMessages } from '@/hooks/useMessages';
 import { getSocket } from '@/app/utils/socket';
 import { getUserId } from '@/app/utils/auth';
+import { sendMessageAPI } from './sendMessage';
+import { markMessagesAsSeenAPI } from './markMessagesAsSeen';
 
 // Type definitions
 export interface Message {
@@ -13,6 +15,7 @@ export interface Message {
   senderId: string;
   timestamp: Date;
   isRead: boolean;
+  status?: 'sent' | 'delivered' | 'seen';
 }
 
 export interface ChatRoom {
@@ -61,7 +64,7 @@ export function useChat() {
     const socket = getSocket();
     if (!socket || listenersSetupRef.current) return;
 
-    // Listen for new messages
+    // Listen for new messages - ONLY trigger re-fetch, DO NOT save messages
     const handleReceiveMessage = (data: {
       chatroomId: string;
       senderId: string;
@@ -69,40 +72,31 @@ export function useChat() {
       messageId?: string;
       timestamp?: string;
     }) => {
-      const currentUserId = getUserId();
-      if (!currentUserId) return;
-
-      // Create message object
-      const newMessage: Message = {
-        id: data.messageId || `msg_${Date.now()}`,
-        text: data.content,
-        senderId: data.senderId,
-        timestamp: data.timestamp ? new Date(data.timestamp) : new Date(),
-        isRead: false,
-      };
-
-      // If message belongs to currently open chat, add it to messages
+      // Socket events may be used ONLY to trigger a re-fetch of messages
+      // DO NOT append messages directly from socket events
       if (selectedChatId === data.chatroomId) {
-        addMessageToHook(newMessage);
+        // Trigger re-fetch to get updated messages with correct statuses
+        fetchMessages();
       }
 
-      // Update chatroom with new last message
+      // Update chatroom last message info (for chat list display)
       updateChatroom(data.chatroomId, {
         lastMessage: data.content,
-        lastMessageTime: newMessage.timestamp,
+        lastMessageTime: data.timestamp ? new Date(data.timestamp) : new Date(),
         // Increment unread count if not the current chat
         unreadCount: selectedChatId === data.chatroomId ? 0 : 1,
       });
     };
 
-    // Listen for message sent acknowledgment (optional, for confirmation)
+    // Listen for message sent acknowledgment - trigger re-fetch to get updated statuses
     const handleMessageSent = (data: {
       chatroomId: string;
       messageId: string;
     }) => {
-      // Message was successfully sent to server
-      // You can use this to update message status if needed
-      console.log('Message sent confirmation:', data);
+      // Trigger re-fetch to get updated message statuses from backend
+      if (selectedChatId === data.chatroomId) {
+        fetchMessages();
+      }
     };
 
     // Set up listeners
@@ -116,7 +110,7 @@ export function useChat() {
       socket.off('messageSent', handleMessageSent);
       listenersSetupRef.current = false;
     };
-  }, [selectedChatId, addMessageToHook, updateChatroom]);
+  }, [selectedChatId, fetchMessages, updateChatroom]);
 
   // Update chatroom messages when messages change
   useEffect(() => {
@@ -135,48 +129,57 @@ export function useChat() {
     updateChatroom(chatId, {
       unreadCount: 0,
     });
+
+    // Mark messages as seen via API when chat view mounts
+    markMessagesAsSeenAPI(chatId).catch((error) => {
+      console.error('Failed to mark messages as seen:', error);
+    });
   }, [updateChatroom]);
 
-  // Send a message via socket
+  // Send a message via POST /api/messages/send
   const sendMessage = useCallback(async (chatId: string, text: string, senderId: string): Promise<boolean> => {
     if (!text.trim()) return false;
 
-    const socket = getSocket();
-    if (!socket || !socket.connected) {
-      console.error('Socket not connected, cannot send message');
+    // Get the chatroom to extract receiverId (friendId)
+    const chatroom = chatRooms.find(room => room.id === chatId);
+    if (!chatroom) {
+      console.error('Chatroom not found');
       return false;
     }
 
-    // Create optimistic message (shows immediately)
-    const optimisticMessage: Message = {
-      id: `temp_${Date.now()}`, // Temporary ID, will be replaced by server
-      text,
-      senderId,
-      timestamp: new Date(),
-      isRead: false,
-    };
+    try {
+      // Call the send API with receiverId and content
+      const response = await sendMessageAPI(chatId, chatroom.friendId, text);
 
-    // Add message optimistically to UI
-    if (selectedChatId === chatId) {
-      addMessageToHook(optimisticMessage);
+      // Transform API response to Message format
+      const savedMessage: Message = {
+        id: response._id,
+        text: response.content,
+        senderId: typeof response.sender === "string" ? response.sender : response.sender?._id || senderId,
+        timestamp: new Date(response.createdAt),
+        isRead: false,
+        status: response.status || 'sent', // Use status from API response
+      };
+
+      // Add message to UI from API response
+      if (selectedChatId === chatId) {
+        addMessageToHook(savedMessage);
+      }
+
+      // Update chatroom with saved message
+      updateChatroom(chatId, {
+        lastMessage: text,
+        lastMessageTime: savedMessage.timestamp,
+        isNewConnection: false,
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      // Do NOT show the message if API fails
+      return false;
     }
-
-    // Update chatroom with optimistic message
-    updateChatroom(chatId, {
-      lastMessage: text,
-      lastMessageTime: optimisticMessage.timestamp,
-      isNewConnection: false,
-    });
-
-    // Emit message via socket
-    socket.emit('sendMessage', {
-      chatroomId: chatId,
-      senderId: senderId,
-      content: text,
-    });
-
-    return true;
-  }, [selectedChatId, addMessageToHook, updateChatroom]);
+  }, [selectedChatId, addMessageToHook, updateChatroom, chatRooms]);
 
   // Get selected chat with messages
   const getSelectedChat = useCallback((): ChatRoom | null => {

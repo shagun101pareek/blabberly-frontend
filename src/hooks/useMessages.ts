@@ -18,6 +18,7 @@ export interface Message {
   senderId: string;
   timestamp: Date;
   isRead: boolean;
+  status?: 'sent' | 'delivered' | 'seen';
 }
 
 /**
@@ -31,6 +32,7 @@ function transformMessage(msg: any): Message {
       typeof msg.sender === "string" ? msg.sender : msg.sender?._id,
     timestamp: new Date(msg.createdAt),
     isRead: false, // can be extended later
+    status: msg.status || 'sent', // Use status from backend, default to 'sent'
   };
 }
 
