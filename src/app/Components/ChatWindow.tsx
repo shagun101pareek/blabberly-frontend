@@ -190,17 +190,51 @@ export default function ChatWindow({
         )}
 
         {/* Messages */}
-        {chatRoom.messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`chat-window-message ${msg.senderId === currentUserId ? 'sent' : 'received'}`}
-          >
-            <div className="chat-window-message-bubble">
-              <p className="chat-window-message-text">{msg.text}</p>
-              <span className="chat-window-message-time">{formatTime(msg.timestamp)}</span>
+        {chatRoom.messages.map((msg) => {
+          const isSentByCurrentUser = msg.senderId === currentUserId;
+          const status = msg.status || 'sent';
+          
+          // Render status ticks only for messages sent by current user
+          const renderStatusTicks = () => {
+            if (!isSentByCurrentUser) return null;
+            
+            if (status === 'seen') {
+              return (
+                <span className="chat-window-message-status" style={{ color: '#0084ff' }}>
+                  ✔️✔️
+                </span>
+              );
+            } else if (status === 'delivered') {
+              return (
+                <span className="chat-window-message-status">
+                  ✔️✔️
+                </span>
+              );
+            } else {
+              // sent
+              return (
+                <span className="chat-window-message-status">
+                  ✔️
+                </span>
+              );
+            }
+          };
+
+          return (
+            <div
+              key={msg.id}
+              className={`chat-window-message ${isSentByCurrentUser ? 'sent' : 'received'}`}
+            >
+              <div className="chat-window-message-bubble">
+                <p className="chat-window-message-text">{msg.text}</p>
+                <div className="chat-window-message-footer" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', justifyContent: isSentByCurrentUser ? 'flex-end' : 'flex-start', marginTop: '0.25rem' }}>
+                  <span className="chat-window-message-time" style={{ margin: 0 }}>{formatTime(msg.timestamp)}</span>
+                  {renderStatusTicks()}
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         <div ref={messagesEndRef} />
       </div>

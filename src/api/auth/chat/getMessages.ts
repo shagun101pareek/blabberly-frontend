@@ -10,6 +10,7 @@ export interface MessageResponse {
   chatroom: string;
   createdAt: string;
   updatedAt: string;
+  status?: 'sent' | 'delivered' | 'seen';
   readBy?: string[];
   __v?: number;
 }
