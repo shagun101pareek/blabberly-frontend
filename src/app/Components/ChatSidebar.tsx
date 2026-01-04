@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { removeAuthToken } from '../utils/auth';
+import { useUser } from '../context/UserContext';
+import { getUserProfileImage } from '../types/user';
 
 interface ChatSidebarProps {
   activeTab?: 'chats' | 'settings' | 'profile';
@@ -12,11 +14,17 @@ interface ChatSidebarProps {
 export default function ChatSidebar({ activeTab = 'chats', onTabChange }: ChatSidebarProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const router = useRouter();
+  const { user } = useUser();
+  const profileImageUrl = getUserProfileImage(user);
+  const initials = user?.username?.charAt(0).toUpperCase() || 'U';
 
   const handleTabClick = (tab: 'chats' | 'settings' | 'profile') => {
     if (tab === 'chats') {
       // Navigate to chat page
       router.push('/chat');
+    } else if (tab === 'profile') {
+      // Navigate to profile page
+      router.push('/profile');
     } else if (onTabChange) {
       onTabChange(tab);
     }
@@ -160,9 +168,24 @@ export default function ChatSidebar({ activeTab = 'chats', onTabChange }: ChatSi
           title="Profile"
         >
           <div className={`sidebar-profile-wrapper ${hoveredItem === 'profile' || activeTab === 'profile' ? 'hovered' : ''}`}>
-            {/* Profile Avatar - Using initials as placeholder */}
+            {/* Profile Avatar */}
             <div className="sidebar-profile-avatar">
-              <span>SP</span>
+              <img
+                src={profileImageUrl}
+                alt="Profile"
+                className="sidebar-profile-avatar-image"
+                onError={(e) => {
+                  // Fallback to initials if image fails to load
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                  const parent = target.parentElement;
+                  if (parent && !parent.querySelector('span')) {
+                    const span = document.createElement('span');
+                    span.textContent = initials;
+                    parent.appendChild(span);
+                  }
+                }}
+              />
             </div>
           </div>
         </button>
