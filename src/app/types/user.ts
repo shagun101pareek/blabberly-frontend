@@ -3,9 +3,21 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { sendFriendRequestAPI } from '@/api/auth/friends/sendFriendRequestAPI';
 
+/**
+ * User interface
+ * 
+ * Architecture Note: Profile pictures are returned as part of the user object.
+ * - Use `profileImage` field for profile picture URL (primary)
+ * - `avatar` is kept for backward compatibility
+ * - DO NOT call profile-picture API on page load
+ * - Only call PUT /api/users/profile-picture when user selects a new image
+ */
 export interface User {
   id: string;
   username: string;
+  /** Profile picture URL from user object (primary field) */
+  profileImage?: string;
+  /** Avatar URL (kept for backward compatibility, prefer profileImage) */
   avatar?: string;
   email?: string;
 }
@@ -167,4 +179,37 @@ export function useCurrentUser() {
   return { currentUser, setCurrentUser };
 }
 
+/**
+ * Get profile image URL from user object
+ * 
+ * Architecture Rule: Profile picture is returned as part of the user object (field: profileImage).
+ * Backend returns relative paths (e.g., /uploads/profile-pics/abc123.jpeg) which need to be
+ * prefixed with the backend base URL (http://localhost:5000) for proper rendering.
+ * 
+ * @param user - User object
+ * @param defaultAvatar - Default avatar URL to return if no profile image is available
+ * @returns Profile image URL (with backend prefix if needed) or default avatar
+ */
+export function getUserProfileImage(user: User | null | undefined, defaultAvatar?: string): string {
+  const BACKEND_BASE_URL = 'http://localhost:5000';
+  const DEFAULT_AVATAR = defaultAvatar || '/default-avatar.svg';
+  
+  if (!user) return DEFAULT_AVATAR;
+  
+  // Prioritize profileImage (backend field) over avatar (legacy)
+  const profileImage = user.profileImage || user.avatar;
+  
+  // If profileImage exists and is non-empty, prefix with backend URL
+  if (profileImage && profileImage.trim() !== '') {
+    // Check if it's already a full URL (starts with http:// or https://)
+    if (profileImage.startsWith('http://') || profileImage.startsWith('https://')) {
+      return profileImage;
+    }
+    // Otherwise, it's a relative path from the backend - prefix with backend URL
+    return `${BACKEND_BASE_URL}${profileImage}`;
+  }
+  
+  // Return default avatar if no profile image is available
+  return DEFAULT_AVATAR;
+}
 
