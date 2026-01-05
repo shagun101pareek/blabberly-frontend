@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import type { ChatRoom } from '@/api/auth/chat/chat';
 import type { FriendRequest } from '@/hooks/useFriendRequests';
+import UserStatus from './UserStatus';
 
 interface ChatListProps {
   chatRooms: ChatRoom[];
@@ -79,7 +80,11 @@ export default function ChatList({
                     <span>{room.friendUsername.charAt(0).toUpperCase()}</span>
                   )}
                 </div>
-                <div className="chat-list-item-online"></div>
+                <UserStatus
+                  userId={room.friendId}
+                  variant="dot"
+                  className="chat-list-item-online-wrapper"
+                />
               </div>
               <div className="chat-list-item-content">
                 <div className="chat-list-item-header">

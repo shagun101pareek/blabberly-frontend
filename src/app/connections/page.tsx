@@ -7,17 +7,24 @@ import ChatNavbar from '../Components/ChatNavbar';
 import ChatSidebar from '../Components/ChatSidebar';
 import UserSearchInput from '../Components/UserSearchInput';
 import UserSearchResults from '../Components/UserSearchResults';
+import MutualFriendsModal from '../Components/MutualFriendsModal';
 import { useFriendRequests } from '@/hooks/useFriendRequests';
 import { useFriendSuggestions } from '@/hooks/useFriendSuggestions';
 import { useFriends } from '@/hooks/useFriends';
 import { useUserSearch } from '@/hooks/useUserSearch';
+import { useMutualFriends } from '@/hooks/useMutualFriends';
+import { getUserId } from '../utils/auth';
 
 export default function ConnectionsPage() {
   const router = useRouter();
   const [processingRequestIds, setProcessingRequestIds] = useState<Set<string>>(new Set());
   const [processingSuggestionIds, setProcessingSuggestionIds] = useState<Set<string>>(new Set());
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [selectedMutualFriendsUserId, setSelectedMutualFriendsUserId] = useState<string | null>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  // Get logged-in user ID
+  const loggedInUserId = getUserId();
 
   // Hooks
   const {
@@ -31,6 +38,14 @@ export default function ConnectionsPage() {
   const { suggestions, sendFriendRequest, isLoading: suggestionsLoading } = useFriendSuggestions();
 
   const { addFriend } = useFriends();
+
+  const {
+    fetchMutualFriends,
+    getCachedCount,
+    getCachedFriends,
+    loading: mutualFriendsLoading,
+    error: mutualFriendsError,
+  } = useMutualFriends();
 
   // User search hook
   const {
@@ -120,6 +135,41 @@ export default function ConnectionsPage() {
     if (diffHours < 24) return `${diffHours}h ago`;
     return `${diffDays}d ago`;
   };
+
+  // Fetch mutual friends for all suggestions on mount
+  useEffect(() => {
+    if (!loggedInUserId || suggestions.length === 0) return;
+
+    // Fetch mutual friends for each suggestion
+    suggestions.forEach((suggestion) => {
+      if (suggestion.id) {
+        // Only fetch if not already cached
+        const cachedCount = getCachedCount(loggedInUserId, suggestion.id);
+        if (cachedCount === null) {
+          fetchMutualFriends(loggedInUserId, suggestion.id);
+        }
+      }
+    });
+  }, [loggedInUserId, suggestions, fetchMutualFriends, getCachedCount]);
+
+  const handleMutualFriendsClick = useCallback(async (otherUserId: string) => {
+    if (!loggedInUserId) return;
+
+    // Open modal immediately (will show loading if data not available)
+    setSelectedMutualFriendsUserId(otherUserId);
+
+    // Check if we have cached data
+    const cachedFriends = getCachedFriends(loggedInUserId, otherUserId);
+    
+    // If not cached, fetch it (modal will show loading state)
+    if (!cachedFriends) {
+      await fetchMutualFriends(loggedInUserId, otherUserId);
+    }
+  }, [loggedInUserId, fetchMutualFriends, getCachedFriends]);
+
+  const handleCloseMutualFriendsModal = useCallback(() => {
+    setSelectedMutualFriendsUserId(null);
+  }, []);
 
   return (
     <ProtectedRoute>
@@ -362,9 +412,37 @@ export default function ConnectionsPage() {
                         </p>
                         
                         {/* Mutual Friends Count */}
-                        <p className="connections-card-mutual">
-                          {Math.floor(Math.random() * 10) + 1} Mutual Friends
-                        </p>
+                        {(() => {
+                          if (!loggedInUserId || !suggestion.id) return null;
+                          
+                          const loadingKey = `${loggedInUserId}:${suggestion.id}`;
+                          const isLoading = mutualFriendsLoading[loadingKey];
+                          const cachedCount = getCachedCount(loggedInUserId, suggestion.id);
+                          
+                          // Show loading state
+                          if (isLoading && cachedCount === null) {
+                            return (
+                              <p className="connections-card-mutual" style={{ cursor: 'default', color: '#6b7280' }}>
+                                Loading...
+                              </p>
+                            );
+                          }
+                          
+                          // Only show if count > 0
+                          if (cachedCount !== null && cachedCount > 0) {
+                            return (
+                              <p 
+                                className="connections-card-mutual"
+                                onClick={() => handleMutualFriendsClick(suggestion.id)}
+                                title="Click to see mutual friends"
+                              >
+                                {cachedCount} {cachedCount === 1 ? 'Mutual Friend' : 'Mutual Friends'}
+                              </p>
+                            );
+                          }
+                          
+                          return null;
+                        })()}
 
                         {/* Connect Button */}
                         <button
@@ -404,6 +482,17 @@ export default function ConnectionsPage() {
             </div>
           </div>
         </div>
+
+        {/* Mutual Friends Modal */}
+        {selectedMutualFriendsUserId && loggedInUserId && (
+          <MutualFriendsModal
+            isOpen={!!selectedMutualFriendsUserId}
+            onClose={handleCloseMutualFriendsModal}
+            mutualFriends={getCachedFriends(loggedInUserId, selectedMutualFriendsUserId) || []}
+            isLoading={mutualFriendsLoading[`${loggedInUserId}:${selectedMutualFriendsUserId}`] || false}
+            error={mutualFriendsError[`${loggedInUserId}:${selectedMutualFriendsUserId}`] || null}
+          />
+        )}
       </div>
     </ProtectedRoute>
   );
