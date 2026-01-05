@@ -12,14 +12,15 @@ import { useFriendRequests } from '@/hooks/useFriendRequests';
 import { useFriends } from '@/hooks/useFriends';
 import { useChat } from '@/api/auth/chat/chat';
 import { getUserId } from '../utils/auth';
-import { useSocketConnection } from '@/hooks/useSocketConnection';
+// Socket connection is now handled globally in SocketProvider (layout.tsx)
+// No need to initialize here anymore
 
 export default function ChatPage() {
   const [activeTab, setActiveTab] = useState<'chats' | 'settings' | 'profile'>('chats');
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   
-  // Initialize socket connection on page load
-  useSocketConnection();
+  // Socket connection is now handled globally in SocketProvider (layout.tsx)
+  // Users will appear online as soon as they're logged in, not just when visiting chat page
 
   // Hooks
   const { 

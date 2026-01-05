@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { removeAuthToken } from '../utils/auth';
+import { disconnectSocket } from '../utils/socket';
 import { useUser } from '../context/UserContext';
 import { getUserProfileImage } from '../types/user';
 
@@ -31,6 +32,8 @@ export default function ChatSidebar({ activeTab = 'chats', onTabChange }: ChatSi
   };
 
   const handleLogout = () => {
+    // Disconnect socket on logout
+    disconnectSocket();
     // Remove authentication token
     removeAuthToken();
     // Redirect to home page

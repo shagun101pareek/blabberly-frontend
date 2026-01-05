@@ -2772,6 +2772,24 @@ textarea::placeholder {
   border: 2px solid white;
 }
 
+.chat-window-header-online-wrapper {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+}
+
+.chat-window-header-online-wrapper .user-status-dot {
+  width: 12px;
+  height: 12px;
+  border: 2px solid white;
+}
+
+.chat-window-header-status-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
 .chat-window-header-info {
   flex: 1;
 }
@@ -2785,9 +2803,16 @@ textarea::placeholder {
 
 .chat-window-header-status {
   font-size: 0.8125rem;
-  color: #10b981;
   margin: 0;
   font-weight: 500;
+}
+
+.user-status-text-online {
+  color: #10b981;
+}
+
+.user-status-text-offline {
+  color: #6b7280;
 }
 
 .chat-window-header-actions {
@@ -3205,6 +3230,18 @@ textarea::placeholder {
   height: 100%;
   object-fit: cover;
   border-radius: 50%;
+}
+
+.chat-list-item-online-wrapper {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+}
+
+.chat-list-item-online-wrapper .user-status-dot {
+  width: 12px;
+  height: 12px;
+  border: 2px solid white;
 }
 
 /* ==================== RESPONSIVE ADJUSTMENTS ==================== */
@@ -3693,6 +3730,104 @@ textarea::placeholder {
   border-radius: 9999px;
 }
 
+/* Mutual Friends Modal Styles */
+.mutual-friends-modal {
+  width: 100%;
+  max-width: 500px;
+}
+
+.mutual-friends-modal-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 1.5rem 0;
+  text-align: center;
+}
+
+.mutual-friends-modal-loading,
+.mutual-friends-modal-error,
+.mutual-friends-modal-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+.mutual-friends-modal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.mutual-friends-modal-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  background-color: #f9fafb;
+  transition: background-color 0.2s;
+}
+
+.mutual-friends-modal-item:hover {
+  background-color: #f3f4f6;
+}
+
+.mutual-friends-modal-avatar {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  background: linear-gradient(to right, #ff2158, #f6349b);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.mutual-friends-modal-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.mutual-friends-modal-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.25rem 0;
+  line-height: 1.2;
+}
+
+.mutual-friends-modal-username {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.2;
+}
+
+/* Make mutual friends count clickable */
+.connections-card-mutual {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0 0 1.5rem 0;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: color 0.2s;
+  display: inline-block;
+}
+
+.connections-card-mutual:hover {
+  color: #ff2158;
+  text-decoration: underline;
+}
+
 /* ==================== PROFILE PAGE STYLES ==================== */
 
 .profile-page-container {
@@ -3854,5 +3989,39 @@ textarea::placeholder {
   .profile-picture-upload-btn {
     width: 36px;
     height: 36px;
+  }
+}
+
+/* ==================== USER STATUS COMPONENT ==================== */
+
+.user-status-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid white;
+  flex-shrink: 0;
+}
+
+.user-status-dot-online {
+  background-color: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.user-status-dot-offline {
+  background-color: #9ca3af;
+}
+
+.user-status-dot-loading {
+  background-color: #d1d5db;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
   }
 }

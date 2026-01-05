@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { ChatRoom } from '@/api/auth/chat/chat';
+import UserStatus from './UserStatus';
 
 interface ChatWindowProps {
   chatRoom: ChatRoom | null;
@@ -124,11 +125,20 @@ export default function ChatWindow({
           ) : (
             <span>{chatRoom.friendUsername.charAt(0).toUpperCase()}</span>
           )}
-          <div className="chat-window-header-online"></div>
+          <UserStatus
+            userId={chatRoom.friendId}
+            variant="dot"
+            className="chat-window-header-online-wrapper"
+          />
         </div>
         <div className="chat-window-header-info">
           <h3 className="chat-window-header-name">{chatRoom.friendUsername}</h3>
-          <p className="chat-window-header-status">Online</p>
+          <UserStatus
+            userId={chatRoom.friendId}
+            variant="inline"
+            className="chat-window-header-status-wrapper"
+            textClassName="chat-window-header-status"
+          />
         </div>
         <div className="chat-window-header-actions">
           <button className="chat-window-header-btn">
