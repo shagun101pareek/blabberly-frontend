@@ -4,6 +4,9 @@ export interface ChatroomParticipant {
   _id: string;
   username: string;
   email: string;
+  profileImage?: string;
+  profilePicture?: string; // Alternative field name for backward compatibility
+  updatedAt?: string; // User profile last updated timestamp for cache-busting
 }
 
 export interface ChatroomLastMessage {

@@ -23,6 +23,7 @@ export interface ChatRoom {
   friendId: string;
   friendUsername: string;
   friendAvatar?: string;
+  friendUpdatedAt?: string | Date; // Friend's profile updated timestamp for cache-busting
   messages: Message[];
   lastMessage?: string;
   lastMessageTime?: Date;
@@ -56,15 +57,30 @@ export function useChat() {
     fetchMessages,
   } = useMessages(selectedChatId);
 
-  // Ref to track socket listeners to avoid duplicates
-  const listenersSetupRef = useRef(false);
+  // Refs to access latest values in socket listener without re-setting up listener
+  const selectedChatIdRef = useRef<string | null>(null);
+  const addMessageToHookRef = useRef(addMessageToHook);
+  const updateChatroomRef = useRef(updateChatroom);
 
-  // Set up socket listeners for receiving messages
+  // Keep refs in sync
+  useEffect(() => {
+    selectedChatIdRef.current = selectedChatId;
+  }, [selectedChatId]);
+
+  useEffect(() => {
+    addMessageToHookRef.current = addMessageToHook;
+  }, [addMessageToHook]);
+
+  useEffect(() => {
+    updateChatroomRef.current = updateChatroom;
+  }, [updateChatroom]);
+
+  // Set up socket listeners for receiving messages (only once)
   useEffect(() => {
     const socket = getSocket();
-    if (!socket || listenersSetupRef.current) return;
+    if (!socket) return;
 
-    // Listen for new messages - ONLY trigger re-fetch, DO NOT save messages
+    // Listen for new messages - append directly to local state
     const handleReceiveMessage = (data: {
       chatroomId: string;
       senderId: string;
@@ -72,50 +88,58 @@ export function useChat() {
       messageId?: string;
       timestamp?: string;
     }) => {
-      // Socket events may be used ONLY to trigger a re-fetch of messages
-      // DO NOT append messages directly from socket events
-      if (selectedChatId === data.chatroomId) {
-        // Trigger re-fetch to get updated messages with correct statuses
-        fetchMessages();
+      console.log('[useChat] 🔔 receiveMessage event received:', {
+        chatroomId: data.chatroomId,
+        messageId: data.messageId,
+        content: data.content.substring(0, 50),
+        timestamp: data.timestamp,
+      });
+
+      // Transform socket message to Message format
+      const newMessage: Message = {
+        id: data.messageId || `temp_${Date.now()}`,
+        text: data.content,
+        senderId: data.senderId,
+        timestamp: data.timestamp ? new Date(data.timestamp) : new Date(),
+        isRead: false,
+        status: 'delivered', // Incoming messages are delivered
+      };
+
+      const currentChatId = selectedChatIdRef.current;
+      console.log('[useChat] Current chatId:', currentChatId, 'Message chatroomId:', data.chatroomId);
+
+      // Append message directly if it's for the current chat
+      if (currentChatId === data.chatroomId) {
+        console.log('[useChat] ✅ Appending message to current chat');
+        addMessageToHookRef.current(newMessage);
+      } else {
+        console.log('[useChat] ⏭️ Message is for different chat, skipping append');
       }
 
       // Update chatroom last message info (for chat list display)
-      updateChatroom(data.chatroomId, {
+      updateChatroomRef.current(data.chatroomId, {
         lastMessage: data.content,
-        lastMessageTime: data.timestamp ? new Date(data.timestamp) : new Date(),
+        lastMessageTime: newMessage.timestamp,
         // Increment unread count if not the current chat
-        unreadCount: selectedChatId === data.chatroomId ? 0 : 1,
+        unreadCount: currentChatId === data.chatroomId ? 0 : 1,
       });
     };
 
-    // Listen for message sent acknowledgment - trigger re-fetch to get updated statuses
-    const handleMessageSent = (data: {
-      chatroomId: string;
-      messageId: string;
-    }) => {
-      // Trigger re-fetch to get updated message statuses from backend
-      if (selectedChatId === data.chatroomId) {
-        fetchMessages();
-      }
-    };
-
-    // Set up listeners
+    // Set up listener
     socket.on('receiveMessage', handleReceiveMessage);
-    socket.on('messageSent', handleMessageSent);
-    listenersSetupRef.current = true;
 
-    // Cleanup listeners on unmount
+    // Cleanup listener on unmount
     return () => {
       socket.off('receiveMessage', handleReceiveMessage);
-      socket.off('messageSent', handleMessageSent);
-      listenersSetupRef.current = false;
     };
-  }, [selectedChatId, fetchMessages, updateChatroom]);
+  }, []); // Empty deps - set up listener only once
 
   // Update chatroom messages when messages change
+  // This keeps chatRooms in sync, but getSelectedChat uses messages directly
   useEffect(() => {
     if (!selectedChatId) return;
 
+    console.log('[useChat] 📝 Syncing messages to chatroom, message count:', messages.length);
     updateChatroom(selectedChatId, {
       messages: messages,
     });
@@ -182,17 +206,23 @@ export function useChat() {
   }, [selectedChatId, addMessageToHook, updateChatroom, chatRooms]);
 
   // Get selected chat with messages
+  // IMPORTANT: Always use messages from useMessages hook, not from chatRooms
+  // This ensures socket-updated messages are always included
   const getSelectedChat = useCallback((): ChatRoom | null => {
     if (!selectedChatId) return null;
     
     const chatroom = chatRooms.find(room => room.id === selectedChatId);
     if (!chatroom) return null;
 
-    // Return chatroom with current messages
-    return {
+    // Always use messages from useMessages hook (includes socket updates)
+    // Do NOT use chatroom.messages as it may be stale
+    const chatWithMessages: ChatRoom = {
       ...chatroom,
-      messages: messages,
+      messages: messages, // Use messages from useMessages hook
     };
+    
+    console.log('[useChat] getSelectedChat called, message count:', messages.length);
+    return chatWithMessages;
   }, [chatRooms, selectedChatId, messages]);
 
   // Get chat by friend ID

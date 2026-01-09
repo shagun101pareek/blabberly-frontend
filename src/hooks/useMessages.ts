@@ -5,7 +5,7 @@
  * - Safe on page refresh
  */
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { getMessagesAPI } from "@/api/auth/chat/getMessages";
 import { getUserId } from "@/app/utils/auth";
 
@@ -43,13 +43,16 @@ export function useMessages(chatroomId: string | null) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const previousChatroomIdRef = useRef<string | null>(null);
 
   /**
    * Fetch messages from backend (REST)
+   * Merges with existing messages to prevent overwriting socket-updated state
    */
   const fetchMessages = useCallback(async () => {
     if (!chatroomId) {
       setMessages([]);
+      previousChatroomIdRef.current = null;
       return;
     }
 
@@ -58,6 +61,9 @@ export function useMessages(chatroomId: string | null) {
       setError("User not authenticated");
       return;
     }
+
+    const isNewChatroom = previousChatroomIdRef.current !== chatroomId;
+    previousChatroomIdRef.current = chatroomId;
 
     setIsLoading(true);
     setError(null);
@@ -71,11 +77,36 @@ export function useMessages(chatroomId: string | null) {
           (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
         );
 
-      setMessages(transformed);
+      // If switching to a new chatroom, replace messages
+      // Otherwise, merge to preserve socket-updated messages
+      if (isNewChatroom) {
+        console.log('[useMessages] New chatroom, replacing messages');
+        setMessages(transformed);
+      } else {
+        console.log('[useMessages] Same chatroom, merging messages');
+        setMessages(prev => {
+          // Create a map of existing messages by ID for quick lookup
+          const existingMap = new Map(prev.map(m => [m.id, m]));
+          
+          // Add/update messages from fetch
+          transformed.forEach(msg => {
+            existingMap.set(msg.id, msg);
+          });
+
+          // Convert back to array and sort
+          const merged = Array.from(existingMap.values());
+          return merged.sort(
+            (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
+          );
+        });
+      }
     } catch (err) {
       console.error("Failed to fetch messages:", err);
       setError("Failed to load messages");
-      setMessages([]);
+      // Only clear messages if switching chatrooms
+      if (isNewChatroom) {
+        setMessages([]);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -93,16 +124,26 @@ export function useMessages(chatroomId: string | null) {
    * Add message (socket / optimistic update)
    */
   const addMessage = useCallback((message: Message) => {
+    console.log('[useMessages] ➕ Adding message via addMessage:', {
+      messageId: message.id,
+      text: message.text.substring(0, 50),
+      timestamp: message.timestamp,
+    });
+    
     setMessages(prev => {
       // Avoid duplicates
       if (prev.some(m => m.id === message.id)) {
+        console.log('[useMessages] ⚠️ Duplicate message detected, skipping:', message.id);
         return prev;
       }
 
       const updated = [...prev, message];
-      return updated.sort(
+      const sorted = updated.sort(
         (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
       );
+      
+      console.log('[useMessages] ✅ Message added, new count:', sorted.length);
+      return sorted;
     });
   }, []);
 
