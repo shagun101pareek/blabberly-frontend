@@ -19,11 +19,27 @@ function transformChatroom(room: ChatroomResponse, currentUserId: string | null)
     const otherParticipant = room.participants.find(p => p._id !== currentUserId);
     if (!otherParticipant) return null;
 
+    // Extract profile picture URL (prioritize profileImage, fallback to profilePicture)
+    const profileImage = otherParticipant.profileImage || otherParticipant.profilePicture;
+    let friendAvatar: string | undefined = undefined;
+    
+    if (profileImage && profileImage.trim() !== '') {
+      const BACKEND_BASE_URL = 'http://localhost:5000';
+      // If it's already a full URL, use it as-is
+      if (profileImage.startsWith('http://') || profileImage.startsWith('https://')) {
+        friendAvatar = profileImage;
+      } else {
+        // Otherwise, it's a relative path from the backend - prefix with backend URL
+        friendAvatar = `${BACKEND_BASE_URL}${profileImage}`;
+      }
+    }
+
     return {
       id: room._id,
       friendId: otherParticipant._id,
       friendUsername: otherParticipant.username,
-      friendAvatar: undefined,
+      friendAvatar,
+      friendUpdatedAt: otherParticipant.updatedAt,
       messages: [], // Messages will be loaded separately
       lastMessage: room.lastMessage?.text,
       lastMessageTime: room.lastMessage?.createdAt 
@@ -64,7 +80,23 @@ export function useChatrooms() {
         .map(room => transformChatroom(room, currentUserId))
         .filter((room): room is ChatRoom => room !== null);
       
-      setChatRooms(transformedRooms);
+      // Preserve existing messages when updating chatrooms
+      // This prevents socket-updated messages from being lost
+      setChatRooms(prev => {
+        const existingMessagesMap = new Map(
+          prev.map(room => [room.id, room.messages])
+        );
+        
+        return transformedRooms.map(newRoom => {
+          const existingMessages = existingMessagesMap.get(newRoom.id);
+          // Preserve messages if they exist (from socket updates or previous fetch)
+          // Only use empty array if this is a brand new chatroom
+          return {
+            ...newRoom,
+            messages: existingMessages || newRoom.messages,
+          };
+        });
+      });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch chatrooms';
       console.error('Failed to fetch chatrooms:', err);

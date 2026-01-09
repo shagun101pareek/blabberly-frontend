@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
 import type { ChatRoom } from '@/api/auth/chat/chat';
 import type { FriendRequest } from '@/hooks/useFriendRequests';
@@ -20,6 +21,45 @@ function formatTime(date?: Date) {
   } catch {
     return '';
   }
+}
+
+/**
+ * Avatar component for chat list items
+ * Displays profile picture if available, otherwise shows initials
+ * Appends cache-busting query parameter to profile picture URLs
+ */
+function ChatAvatar({ room }: { room: ChatRoom }) {
+  const [imageError, setImageError] = useState(false);
+  const hasProfilePicture = room.friendAvatar && !imageError;
+
+  if (hasProfilePicture && room.friendAvatar) {
+    // Append cache-busting query parameter using updatedAt or current timestamp
+    const cacheBuster = room.friendUpdatedAt 
+      ? (typeof room.friendUpdatedAt === 'string' 
+          ? new Date(room.friendUpdatedAt).getTime() 
+          : room.friendUpdatedAt.getTime())
+      : Date.now();
+    
+    const imageUrl = `${room.friendAvatar}${room.friendAvatar.includes('?') ? '&' : '?'}v=${cacheBuster}`;
+
+    return (
+      <Image
+        src={imageUrl}
+        alt={room.friendUsername}
+        width={44}
+        height={44}
+        className="chat-list-item-avatar-image"
+        onError={() => setImageError(true)}
+        unoptimized
+      />
+    );
+  }
+
+  return (
+    <span className="chat-list-item-avatar-initials">
+      {room.friendUsername.charAt(0).toUpperCase()}
+    </span>
+  );
 }
 
 export default function ChatList({
@@ -74,11 +114,7 @@ export default function ChatList({
             >
               <div className="chat-list-item-avatar-wrapper">
                 <div className="chat-list-item-avatar">
-                  {room.friendAvatar ? (
-                    <img src={room.friendAvatar} alt={room.friendUsername} />
-                  ) : (
-                    <span>{room.friendUsername.charAt(0).toUpperCase()}</span>
-                  )}
+                  <ChatAvatar room={room} />
                 </div>
                 <UserStatus
                   userId={room.friendId}

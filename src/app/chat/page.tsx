@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import ChatSidebar from '../Components/ChatSidebar';
 import ChatList from '../Components/ChatList';
 import ChatWindow from '../Components/ChatWindow';
@@ -101,7 +101,15 @@ export default function ChatPage() {
     selectChat(chatId);
   }, [selectChat]);
 
+  // Get selected chat - this should update when messages change
   const selectedChat = getSelectedChat();
+  
+  // Debug: Log when selectedChat changes
+  useEffect(() => {
+    if (selectedChat) {
+      console.log('[ChatPage] selectedChat updated, message count:', selectedChat.messages.length);
+    }
+  }, [selectedChat?.messages.length, selectedChat?.id]);
 
   // Check if we're still loading initial data
   const isInitialLoading = chatLoading || friendRequestsLoading;
@@ -170,7 +178,7 @@ export default function ChatPage() {
                   chatRoom={selectedChat}
                   currentUserId={currentUserId}
                   onSendMessage={handleSendMessage}
-                  onMarkAsRead={markConnectionAsRead}
+                  // onMarkAsRead={markConnectionAsRead}
                 />
               </>
             )}
