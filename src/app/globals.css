@@ -3314,6 +3314,64 @@ textarea::placeholder {
   }
 }
 
+.chat-window-typing {
+  display: flex;
+  align-items: center;
+  /* gap: 0.5rem; */
+  /* padding: 0.5rem 1rem; */
+  /* margin: 0.5rem 0 4rem 0; */
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.2;
+  margin-bottom: 4rem;
+}
+
+.chat-window-typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  background: #f3f4f6;
+  border-radius: 1rem;
+}
+
+.chat-window-typing-indicator span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #9ca3af;
+  display: inline-block;
+  animation: typingDot 1.4s infinite ease-in-out;
+}
+
+.chat-window-typing-indicator span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.chat-window-typing-indicator span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+.chat-window-typing-indicator span:nth-child(3) {
+  animation-delay: 0;
+}
+
+@keyframes typingDot {
+  0%, 80%, 100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.chat-window-typing-text {
+  color: #6b7280;
+  font-style: italic;
+}
+
 /* ==================== CONNECTIONS PAGE STYLES ==================== */
 
 .connections-search-container {
