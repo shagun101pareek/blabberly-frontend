@@ -33,6 +33,9 @@ export default function ChatWindow({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { socket } = useSocket();
+  const [isTyping, setIsTyping] = useState(false);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
 
   /* =============================
      REST → UI SYNC (MERGE SAFELY)
@@ -80,42 +83,131 @@ export default function ChatWindow({
   /* =============================
      RECEIVE MESSAGE (REAL-TIME)
   ============================== */
+  useEffect( () => {
+    if (!socket) return;
+    
+      const handleReceiveMessage = (msg: any) => {
+        const incoming: UIMessage = {
+          id: msg._id,
+          text: msg.content,
+          senderId: msg.sender?._id || msg.sender,
+          timestamp: new Date(msg.createdAt),
+          status: msg.status || 'sent',
+        };
+    
+        setMessages((prev) => {
+          // remove matching optimistic message
+          const withoutTemp = prev.filter(
+            (m) =>
+              !(
+                m.id.startsWith('temp-') &&
+                m.senderId === incoming.senderId &&
+                m.text === incoming.text
+              )
+          );
+    
+          if (withoutTemp.some((m) => m.id === incoming.id)) {
+            return withoutTemp;
+          }
+    
+          return [...withoutTemp, incoming];
+        });
+    
+        // ✅ ACKNOWLEDGE DELIVERY (THIS IS THE KEY)
+        socket.emit("messageDelivered", {
+          messageId: incoming.id,
+        });
+      };
+    
+      socket.on('receiveMessage', handleReceiveMessage);
+    
+      return () => {
+        socket.off('receiveMessage', handleReceiveMessage);
+      };
+    }, [socket]);
+    
+
   useEffect(() => {
     if (!socket) return;
-
-    const handleReceiveMessage = (msg: any) => {
-      const incoming: UIMessage = {
-        id: msg._id,
-        text: msg.content,
-        senderId: msg.sender?._id || msg.sender,
-        timestamp: new Date(msg.createdAt),
-        status: msg.status || 'sent',
-      };
-
-      setMessages((prev) => {
-        // remove matching optimistic message
-        const withoutTemp = prev.filter(
-          (m) =>
-            !(
-              m.id.startsWith('temp-') &&
-              m.senderId === incoming.senderId &&
-              m.text === incoming.text
-            )
-        );
-
-        if (withoutTemp.some((m) => m.id === incoming.id)) {
-          return withoutTemp;
-        }
-
-        return [...withoutTemp, incoming];
-      });
+  
+    const handleStatusUpdate = ({
+      messageId,
+      status,
+    }: {
+      messageId: string;
+      status: 'delivered' | 'seen';
+    }) => {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId ? { ...m, status } : m
+        )
+      );
     };
-
-    socket.on('receiveMessage', handleReceiveMessage);
+  
+    socket.on("messageStatusUpdated", handleStatusUpdate);
+  
     return () => {
-      socket.off('receiveMessage', handleReceiveMessage);
+      socket.off("messageStatusUpdated", handleStatusUpdate);
     };
   }, [socket]);
+
+  /* =============================
+   TYPING INDICATOR (RECEIVE)
+============================== */
+useEffect(() => {
+  if (!socket || !chatRoom?.id) return;
+
+  let typingTimeout: NodeJS.Timeout | null = null;
+
+  const handleTyping = (data: any) => {
+    // Check if typing event is for current chatroom and not from current user
+    const chatroomId = data.chatroomId || data.chatId;
+    const userId = data.userId || data.user?._id || data.user;
+    
+    // Debug: Uncomment to see typing events
+    // console.log('[Typing] Received typing event:', { data, chatroomId, userId, currentChatroomId: chatRoom.id, currentUserId });
+    
+    if (chatroomId === chatRoom.id && userId !== currentUserId) {
+      setIsTyping(true);
+      
+      // Auto-clear typing indicator after 3 seconds if stopTyping isn't received
+      if (typingTimeout) {
+        clearTimeout(typingTimeout);
+      }
+      typingTimeout = setTimeout(() => {
+        setIsTyping(false);
+      }, 3000);
+    }
+  };
+
+  const handleStopTyping = (data: any) => {
+    // Check if stopTyping event is for current chatroom and not from current user
+    const chatroomId = data.chatroomId || data.chatId;
+    const userId = data.userId || data.user?._id || data.user;
+    
+    if (chatroomId === chatRoom.id && userId !== currentUserId) {
+      setIsTyping(false);
+      if (typingTimeout) {
+        clearTimeout(typingTimeout);
+        typingTimeout = null;
+      }
+    }
+  };
+
+  socket.on('typing', handleTyping);
+  socket.on('stopTyping', handleStopTyping);
+
+  return () => {
+    socket.off('typing', handleTyping);
+    socket.off('stopTyping', handleStopTyping);
+    if (typingTimeout) {
+      clearTimeout(typingTimeout);
+    }
+    setIsTyping(false);
+  };
+}, [socket, chatRoom?.id, currentUserId]);
+
+  
 
   /* =============================
      SCROLL
@@ -155,6 +247,8 @@ export default function ChatWindow({
       chatroomId: chatRoom.id,
       content: message,
     });
+    socket.emit('stopTyping', { chatroomId: chatRoom.id });
+
 
     setMessage('');
   };
@@ -245,6 +339,15 @@ export default function ChatWindow({
             </div>
           );
         })}
+        {isTyping && (
+          <div className="chat-window-typing">
+            <div className="chat-window-typing-indicator">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
 
@@ -256,7 +359,22 @@ export default function ChatWindow({
           className="chat-window-input"
           placeholder="Write a message..."
           value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          onChange={(e) => {
+            setMessage(e.target.value);
+          
+            if (!socket || !chatRoom) return;
+          
+            socket.emit('typing', { chatroomId: chatRoom.id });
+          
+            if (typingTimeoutRef.current) {
+              clearTimeout(typingTimeoutRef.current);
+            }
+          
+            typingTimeoutRef.current = setTimeout(() => {
+              socket.emit('stopTyping', { chatroomId: chatRoom.id });
+            }, 1000);
+          }}
+          
           onKeyDown={handleKeyDown}
         />
         <button
