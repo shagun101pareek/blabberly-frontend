@@ -3,10 +3,11 @@
  * Handles REST API calls to get chatrooms list
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { getChatroomsAPI, type ChatroomResponse } from '@/api/auth/chat/getChatrooms';
 import { getUserId } from '@/app/utils/auth';
 import type { ChatRoom } from '@/api/auth/chat/chat';
+import { useSocket } from '@/app/context/SocketContext';
 
 /**
  * Transform API chatroom response to ChatRoom interface
@@ -45,7 +46,7 @@ function transformChatroom(room: ChatroomResponse, currentUserId: string | null)
       lastMessageTime: room.lastMessage?.createdAt 
         ? new Date(room.lastMessage.createdAt) 
         : (room.updatedAt ? new Date(room.updatedAt) : undefined),
-      unreadCount: 0, // Can be enhanced later
+      unreadCount: 0,
       isNewConnection: false,
     };
   }
@@ -55,12 +56,42 @@ function transformChatroom(room: ChatroomResponse, currentUserId: string | null)
 }
 
 /**
+ * Sort chatrooms by lastMessageTime DESC (most recent first)
+ */
+function sortChatroomsByLastMessage(rooms: ChatRoom[]): ChatRoom[] {
+  return [...rooms].sort((a, b) => {
+    const timeA = a.lastMessageTime?.getTime() || 0;
+    const timeB = b.lastMessageTime?.getTime() || 0;
+    return timeB - timeA;
+  });
+}
+
+/**
+ * Extract text from lastMessage (handles both string and object formats)
+ */
+function extractLastMessageText(lastMessage: string | { text?: string; content?: string } | undefined): string {
+  if (!lastMessage) return '';
+  if (typeof lastMessage === 'string') return lastMessage;
+  return lastMessage.text || lastMessage.content || '';
+}
+
+/**
+ * Truncate message preview to 30 characters
+ */
+function truncateMessage(text: string | undefined, maxLength: number = 30): string {
+  if (!text) return '';
+  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+}
+
+/**
  * Hook for fetching and managing chatrooms
  */
 export function useChatrooms() {
   const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { socket } = useSocket();
+  const selectedChatIdRef = useRef<string | null>(null);
 
   // Fetch chatrooms from API
   const fetchChatrooms = useCallback(async () => {
@@ -86,16 +117,24 @@ export function useChatrooms() {
         const existingMessagesMap = new Map(
           prev.map(room => [room.id, room.messages])
         );
+        const existingUnreadMap = new Map(
+          prev.map(room => [room.id, room.unreadCount])
+        );
         
-        return transformedRooms.map(newRoom => {
+        const updated = transformedRooms.map(newRoom => {
           const existingMessages = existingMessagesMap.get(newRoom.id);
+          const existingUnread = existingUnreadMap.get(newRoom.id);
           // Preserve messages if they exist (from socket updates or previous fetch)
           // Only use empty array if this is a brand new chatroom
+          // Preserve unreadCount if it exists (from socket updates)
           return {
             ...newRoom,
             messages: existingMessages || newRoom.messages,
+            unreadCount: existingUnread !== undefined ? existingUnread : newRoom.unreadCount,
           };
         });
+        
+        return sortChatroomsByLastMessage(updated);
       });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch chatrooms';
@@ -111,13 +150,136 @@ export function useChatrooms() {
     fetchChatrooms();
   }, [fetchChatrooms]);
 
+  // Socket listeners for real-time chat list updates
+  useEffect(() => {
+    if (!socket) return;
+
+    // Handle receiveMessage event
+    const handleReceiveMessage = (data: {
+      chatroomId: string;
+      senderId: string;
+      content: string | { text?: string; content?: string };
+      messageId?: string;
+      timestamp?: string;
+      createdAt?: string;
+    }) => {
+      const timestamp = data.timestamp || data.createdAt;
+      const messageTime = timestamp ? new Date(timestamp) : new Date();
+      const isActiveChat = selectedChatIdRef.current === data.chatroomId;
+      
+      // Extract content text (handle both string and object)
+      const contentText = typeof data.content === 'string' 
+        ? data.content 
+        : extractLastMessageText(data.content);
+
+      setChatRooms(prev => {
+        const updated = prev.map(room => {
+          if (room.id === data.chatroomId) {
+            return {
+              ...room,
+              lastMessage: truncateMessage(contentText, 30),
+              lastMessageTime: messageTime,
+              unreadCount: isActiveChat ? 0 : (room.unreadCount + 1),
+            };
+          }
+          return room;
+        });
+        
+        return sortChatroomsByLastMessage(updated);
+      });
+    };
+
+    // Handle chatListUpdated event
+    const handleChatListUpdated = (data: {
+      chatroomId: string;
+      lastMessage?: string | { text?: string; content?: string; sender?: string; createdAt?: string };
+      lastMessageTime?: string;
+      unreadCount?: number;
+    }) => {
+      setChatRooms(prev => {
+        const updated = prev.map(room => {
+          if (room.id === data.chatroomId) {
+            const lastMessageText = data.lastMessage 
+              ? extractLastMessageText(data.lastMessage as string | { text?: string; content?: string })
+              : room.lastMessage;
+            
+            // Extract timestamp from lastMessage object if it's an object
+            let lastMessageTime = room.lastMessageTime;
+            if (data.lastMessageTime) {
+              lastMessageTime = new Date(data.lastMessageTime);
+            } else if (data.lastMessage && typeof data.lastMessage === 'object' && data.lastMessage.createdAt) {
+              lastMessageTime = new Date(data.lastMessage.createdAt);
+            }
+            
+            return {
+              ...room,
+              lastMessage: lastMessageText ? truncateMessage(lastMessageText, 30) : room.lastMessage,
+              lastMessageTime,
+              unreadCount: data.unreadCount !== undefined ? data.unreadCount : room.unreadCount,
+            };
+          }
+          return room;
+        });
+        
+        return sortChatroomsByLastMessage(updated);
+      });
+    };
+
+    // Remove existing listeners before adding new ones
+    socket.off('receiveMessage', handleReceiveMessage);
+    socket.off('chatListUpdated', handleChatListUpdated);
+
+    // Register listeners
+    socket.on('receiveMessage', handleReceiveMessage);
+    socket.on('chatListUpdated', handleChatListUpdated);
+
+    return () => {
+      socket.off('receiveMessage', handleReceiveMessage);
+      socket.off('chatListUpdated', handleChatListUpdated);
+    };
+  }, [socket]);
+
+  // Expose method to set selected chat ID for unread count logic
+  const setSelectedChatId = useCallback((chatId: string | null) => {
+    selectedChatIdRef.current = chatId;
+    
+    // Reset unread count when chat is opened
+    if (chatId) {
+      setChatRooms(prev =>
+        prev.map(room =>
+          room.id === chatId ? { ...room, unreadCount: 0 } : room
+        )
+      );
+    }
+  }, []);
+
   // Update a specific chatroom
   const updateChatroom = useCallback((chatroomId: string, updates: Partial<ChatRoom>) => {
-    setChatRooms(prev =>
-      prev.map(room =>
-        room.id === chatroomId ? { ...room, ...updates } : room
-      )
-    );
+    setChatRooms(prev => {
+      const updated = prev.map(room =>
+        room.id === chatroomId 
+          ? { 
+              ...room, 
+              ...updates,
+              lastMessage: updates.lastMessage 
+                ? truncateMessage(
+                    typeof updates.lastMessage === 'string' 
+                      ? updates.lastMessage 
+                      : extractLastMessageText(updates.lastMessage as any),
+                    30
+                  ) 
+                : room.lastMessage,
+            } 
+          : room
+      );
+      
+      // Auto-sort if lastMessageTime was updated
+      if (updates.lastMessageTime) {
+        return sortChatroomsByLastMessage(updated);
+      }
+      
+      return updated;
+    });
   }, []);
 
   // Add a new chatroom (for new connections)
@@ -139,6 +301,7 @@ export function useChatrooms() {
     fetchChatrooms,
     updateChatroom,
     addChatroom,
+    setSelectedChatId,
   };
 }
 

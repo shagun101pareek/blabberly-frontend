@@ -1322,10 +1322,31 @@ textarea::placeholder {
   margin: 0;
 }
 
+.chat-list-item-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .chat-list-item-timestamp {
   font-size: 0.75rem;
   color: #9ca3af;
   font-weight: 400;
+}
+
+.chat-list-item-unread-badge {
+  background: linear-gradient(135deg, #ff2158, #f6349b 100%);
+  color: white;
+  border-radius: 12px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1;
 }
 
 .chat-list-item-footer {

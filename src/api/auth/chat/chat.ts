@@ -47,6 +47,7 @@ export function useChat() {
     fetchChatrooms,
     updateChatroom,
     addChatroom,
+    setSelectedChatId: setSelectedChatIdInHook,
   } = useChatrooms();
 
   // Use messages hook for fetching and managing messages for selected chat
@@ -116,13 +117,7 @@ export function useChat() {
         console.log('[useChat] ⏭️ Message is for different chat, skipping append');
       }
 
-      // Update chatroom last message info (for chat list display)
-      updateChatroomRef.current(data.chatroomId, {
-        lastMessage: data.content,
-        lastMessageTime: newMessage.timestamp,
-        // Increment unread count if not the current chat
-        unreadCount: currentChatId === data.chatroomId ? 0 : 1,
-      });
+      // Note: Chat list updates (lastMessage, timestamp, unreadCount) are handled by useChatrooms socket listener
     };
 
     // Set up listener
@@ -148,6 +143,7 @@ export function useChat() {
   // Select a chatroom
   const selectChat = useCallback((chatId: string) => {
     setSelectedChatId(chatId);
+    setSelectedChatIdInHook(chatId);
     
     // Mark messages as read
     updateChatroom(chatId, {
@@ -158,7 +154,7 @@ export function useChat() {
     markMessagesAsSeenAPI(chatId).catch((error) => {
       console.error('Failed to mark messages as seen:', error);
     });
-  }, [updateChatroom]);
+  }, [updateChatroom, setSelectedChatIdInHook]);
 
   // Send a message via POST /api/messages/send
   const sendMessage = useCallback(async (chatId: string, text: string, senderId: string): Promise<boolean> => {
