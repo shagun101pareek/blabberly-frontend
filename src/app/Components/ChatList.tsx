@@ -17,10 +17,29 @@ interface ChatListProps {
 function formatTime(date?: Date) {
   if (!date) return '';
   try {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const now = new Date();
+    const messageDate = new Date(date);
+    const diffMs = now.getTime() - messageDate.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      // Today: show time only
+      return messageDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } else if (diffDays === 1) {
+      return 'Yesterday';
+    } else if (diffDays < 7) {
+      return messageDate.toLocaleDateString([], { weekday: 'short' });
+    } else {
+      return messageDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    }
   } catch {
     return '';
   }
+}
+
+function truncateMessage(text: string | undefined, maxLength: number = 30): string {
+  if (!text) return '';
+  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
 }
 
 /**
@@ -125,13 +144,24 @@ export default function ChatList({
               <div className="chat-list-item-content">
                 <div className="chat-list-item-header">
                   <h3 className="chat-list-item-name">{room.friendUsername}</h3>
-                  <span className="chat-list-item-timestamp">
-                    {formatTime(room.lastMessageTime)}
-                  </span>
+                  <div className="chat-list-item-header-right">
+                    <span className="chat-list-item-timestamp">
+                      {formatTime(room.lastMessageTime)}
+                    </span>
+                    {room.unreadCount > 0 && (
+                      <span className="chat-list-item-unread-badge">
+                        {room.unreadCount > 99 ? '99+' : room.unreadCount}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="chat-list-item-footer">
                   <p className="chat-list-item-message">
-                    {room.lastMessage || 'Say hi to your new friend!'}
+                    {room.lastMessageType === 'image' 
+                      ? '📷 Photo'
+                      : room.lastMessageType === 'pdf'
+                      ? '📄 Document'
+                      : truncateMessage(room.lastMessage) || 'Say hi to your new friend!'}
                   </p>
                 </div>
               </div>
