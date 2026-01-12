@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { ChatRoom } from '@/api/auth/chat/chat';
+import { ChatRoom, Message } from '@/api/auth/chat/chat';
 import UserStatus from './UserStatus';
 import { useSocket } from '../context/SocketContext';
+import MessageBubble from './MessageBubble';
+import { uploadMessageFileAPI } from '@/api/auth/chat/uploadMessageFile';
 
-interface UIMessage {
+interface UIMessage extends Message {
   id: string;
   text: string;
   senderId: string;
@@ -32,9 +34,11 @@ export default function ChatWindow({
   const [messages, setMessages] = useState<UIMessage[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { socket } = useSocket();
   const [isTyping, setIsTyping] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
 
   /* =============================
@@ -48,10 +52,13 @@ export default function ChatWindow({
 
     const normalized: UIMessage[] = chatRoom.messages.map((m: any) => ({
       id: m.id || m._id,
-      text: m.text || m.content,
+      text: m.text || m.content || '',
       senderId: m.senderId || m.sender?._id || m.sender,
       timestamp: new Date(m.timestamp || m.createdAt),
       status: m.status || 'sent',
+      type: m.type || 'text',
+      fileUrl: m.fileUrl || m.file_url,
+      fileName: m.fileName || m.file_name,
     }));
 
     setMessages((prev) => {
@@ -89,10 +96,13 @@ export default function ChatWindow({
       const handleReceiveMessage = (msg: any) => {
         const incoming: UIMessage = {
           id: msg._id,
-          text: msg.content,
+          text: msg.content || msg.text || '',
           senderId: msg.sender?._id || msg.sender,
           timestamp: new Date(msg.createdAt),
           status: msg.status || 'sent',
+          type: msg.type || 'text',
+          fileUrl: msg.fileUrl || msg.file_url,
+          fileName: msg.fileName || msg.file_name,
         };
     
         setMessages((prev) => {
@@ -102,7 +112,8 @@ export default function ChatWindow({
               !(
                 m.id.startsWith('temp-') &&
                 m.senderId === incoming.senderId &&
-                m.text === incoming.text
+                ((m.type === 'text' && m.text === incoming.text) ||
+                 (m.type !== 'text' && m.fileUrl === incoming.fileUrl))
               )
           );
     
@@ -227,6 +238,60 @@ useEffect(() => {
   }, [chatRoom?.id, onMarkAsRead]);
 
   /* =============================
+     FILE UPLOAD HANDLER
+  ============================== */
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !chatRoom || !socket) return;
+
+    const isImage = file.type.startsWith('image/');
+    const isPDF = file.type === 'application/pdf';
+
+    if (!isImage && !isPDF) {
+      alert('Please select an image or PDF file');
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const uploadResponse = await uploadMessageFileAPI(file, chatRoom.id, chatRoom.friendId);
+      
+      const tempMessage: UIMessage = {
+        id: `temp-${Date.now()}`,
+        text: uploadResponse.fileType === 'image' ? '📷 Photo' : '📄 Document',
+        senderId: currentUserId,
+        timestamp: new Date(),
+        status: 'sent',
+        type: uploadResponse.fileType,
+        fileUrl: uploadResponse.fileUrl,
+        fileName: uploadResponse.fileName,
+      };
+
+      setMessages((prev) => [...prev, tempMessage]);
+
+      socket.emit('sendMessage', {
+        chatroomId: chatRoom.id,
+        content: uploadResponse.fileType === 'image' ? '📷 Photo' : '📄 Document',
+        type: uploadResponse.fileType,
+        fileUrl: uploadResponse.fileUrl,
+        fileName: uploadResponse.fileName,
+      });
+      
+      socket.emit('stopTyping', { chatroomId: chatRoom.id });
+    } catch (error) {
+      console.error('Failed to upload file:', error);
+      alert('Failed to upload file. Please try again.');
+      setMessages((prev) => prev.filter((m) => !m.id.startsWith('temp-')));
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  /* =============================
      SEND MESSAGE (SOCKET-ONLY)
   ============================== */
   const handleSendMessage = () => {
@@ -238,6 +303,7 @@ useEffect(() => {
       senderId: currentUserId,
       timestamp: new Date(),
       status: 'sent',
+      type: 'text',
     };
 
     // optimistic UI
@@ -248,7 +314,6 @@ useEffect(() => {
       content: message,
     });
     socket.emit('stopTyping', { chatroomId: chatRoom.id });
-
 
     setMessage('');
   };
@@ -313,30 +378,13 @@ useEffect(() => {
       <div className="chat-window-messages">
         {messages.map((msg) => {
           const isMine = msg.senderId === currentUserId;
-
           return (
-            <div
+            <MessageBubble
               key={msg.id}
-              className={`chat-window-message ${isMine ? 'sent' : 'received'}`}
-            >
-              <div className="chat-window-message-bubble">
-                <p className="chat-window-message-text">{msg.text}</p>
-                <div className="chat-window-message-footer">
-                  <span className="chat-window-message-time">
-                    {formatTime(msg.timestamp)}
-                  </span>
-                  {isMine && (
-                    <span className="chat-window-message-status">
-                      {msg.status === 'seen'
-                        ? '✔✔'
-                        : msg.status === 'delivered'
-                        ? '✔✔'
-                        : '✔'}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
+              message={msg}
+              isMine={isMine}
+              formatTime={formatTime}
+            />
           );
         })}
         {isTyping && (
@@ -353,6 +401,25 @@ useEffect(() => {
 
       {/* Input */}
       <div className="chat-window-input-container">
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*,application/pdf"
+          className="chat-window-file-input"
+          onChange={handleFileSelect}
+          style={{ display: 'none' }}
+        />
+        <button
+          type="button"
+          className="chat-window-attach-btn"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isUploading}
+          title="Attach file"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+          </svg>
+        </button>
         <input
           ref={inputRef}
           type="text"
@@ -380,9 +447,9 @@ useEffect(() => {
         <button
           className="chat-window-send-btn"
           onClick={handleSendMessage}
-          disabled={!message.trim()}
+          disabled={!message.trim() || isUploading}
         >
-          Send
+          {isUploading ? '...' : 'Send'}
         </button>
       </div>
     </div>

@@ -35,6 +35,18 @@ function transformChatroom(room: ChatroomResponse, currentUserId: string | null)
       }
     }
 
+    // Determine preview text based on lastMessage type
+    let previewText = room.lastMessage?.text || '';
+    if (room.lastMessage) {
+      // Check if backend sends type info (may need to adjust based on actual API response)
+      const messageType = (room.lastMessage as any).type || 'text';
+      if (messageType === 'image') {
+        previewText = '📷 Photo';
+      } else if (messageType === 'pdf') {
+        previewText = '📄 Document';
+      }
+    }
+
     return {
       id: room._id,
       friendId: otherParticipant._id,
@@ -42,7 +54,8 @@ function transformChatroom(room: ChatroomResponse, currentUserId: string | null)
       friendAvatar,
       friendUpdatedAt: otherParticipant.updatedAt,
       messages: [], // Messages will be loaded separately
-      lastMessage: room.lastMessage?.text,
+      lastMessage: previewText,
+      lastMessageType: (room.lastMessage as any)?.type || 'text',
       lastMessageTime: room.lastMessage?.createdAt 
         ? new Date(room.lastMessage.createdAt) 
         : (room.updatedAt ? new Date(room.updatedAt) : undefined),
@@ -162,6 +175,7 @@ export function useChatrooms() {
       messageId?: string;
       timestamp?: string;
       createdAt?: string;
+      type?: 'text' | 'image' | 'pdf';
     }) => {
       const timestamp = data.timestamp || data.createdAt;
       const messageTime = timestamp ? new Date(timestamp) : new Date();
@@ -171,13 +185,24 @@ export function useChatrooms() {
       const contentText = typeof data.content === 'string' 
         ? data.content 
         : extractLastMessageText(data.content);
+      
+      const messageType = data.type || 'text';
+      
+      // Determine preview text based on type
+      let previewText = contentText;
+      if (messageType === 'image') {
+        previewText = '📷 Photo';
+      } else if (messageType === 'pdf') {
+        previewText = '📄 Document';
+      }
 
       setChatRooms(prev => {
         const updated = prev.map(room => {
           if (room.id === data.chatroomId) {
             return {
               ...room,
-              lastMessage: truncateMessage(contentText, 30),
+              lastMessage: truncateMessage(previewText, 30),
+              lastMessageType: messageType,
               lastMessageTime: messageTime,
               unreadCount: isActiveChat ? 0 : (room.unreadCount + 1),
             };
@@ -193,6 +218,7 @@ export function useChatrooms() {
     const handleChatListUpdated = (data: {
       chatroomId: string;
       lastMessage?: string | { text?: string; content?: string; sender?: string; createdAt?: string };
+      lastMessageType?: 'text' | 'image' | 'pdf';
       lastMessageTime?: string;
       unreadCount?: number;
     }) => {
@@ -202,6 +228,15 @@ export function useChatrooms() {
             const lastMessageText = data.lastMessage 
               ? extractLastMessageText(data.lastMessage as string | { text?: string; content?: string })
               : room.lastMessage;
+            
+            // Determine preview text based on type
+            let previewText = lastMessageText;
+            const messageType = data.lastMessageType || room.lastMessageType || 'text';
+            if (messageType === 'image') {
+              previewText = '📷 Photo';
+            } else if (messageType === 'pdf') {
+              previewText = '📄 Document';
+            }
             
             // Extract timestamp from lastMessage object if it's an object
             let lastMessageTime = room.lastMessageTime;
@@ -213,7 +248,8 @@ export function useChatrooms() {
             
             return {
               ...room,
-              lastMessage: lastMessageText ? truncateMessage(lastMessageText, 30) : room.lastMessage,
+              lastMessage: previewText ? truncateMessage(previewText, 30) : room.lastMessage,
+              lastMessageType: messageType,
               lastMessageTime,
               unreadCount: data.unreadCount !== undefined ? data.unreadCount : room.unreadCount,
             };

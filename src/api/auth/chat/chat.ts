@@ -16,6 +16,9 @@ export interface Message {
   timestamp: Date;
   isRead: boolean;
   status?: 'sent' | 'delivered' | 'seen';
+  type?: 'text' | 'image' | 'pdf';
+  fileUrl?: string;
+  fileName?: string;
 }
 
 export interface ChatRoom {
@@ -26,6 +29,7 @@ export interface ChatRoom {
   friendUpdatedAt?: string | Date; // Friend's profile updated timestamp for cache-busting
   messages: Message[];
   lastMessage?: string;
+  lastMessageType?: 'text' | 'image' | 'pdf';
   lastMessageTime?: Date;
   unreadCount: number;
   isNewConnection?: boolean;

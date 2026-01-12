@@ -157,7 +157,11 @@ export default function ChatList({
                 </div>
                 <div className="chat-list-item-footer">
                   <p className="chat-list-item-message">
-                    {truncateMessage(room.lastMessage) || 'Say hi to your new friend!'}
+                    {room.lastMessageType === 'image' 
+                      ? '📷 Photo'
+                      : room.lastMessageType === 'pdf'
+                      ? '📄 Document'
+                      : truncateMessage(room.lastMessage) || 'Say hi to your new friend!'}
                   </p>
                 </div>
               </div>
