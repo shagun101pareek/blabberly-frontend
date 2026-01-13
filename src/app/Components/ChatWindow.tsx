@@ -59,6 +59,7 @@ export default function ChatWindow({
       type: m.type || 'text',
       fileUrl: m.fileUrl || m.file_url,
       fileName: m.fileName || m.file_name,
+      isRead: m.isRead || false,
     }));
 
     setMessages((prev) => {
@@ -103,6 +104,7 @@ export default function ChatWindow({
           type: msg.type || 'text',
           fileUrl: msg.fileUrl || msg.file_url,
           fileName: msg.fileName || msg.file_name,
+          isRead: msg.isRead || false,
         };
     
         setMessages((prev) => {
@@ -266,6 +268,7 @@ useEffect(() => {
         type: uploadResponse.fileType,
         fileUrl: uploadResponse.fileUrl,
         fileName: uploadResponse.fileName,
+        isRead: false,
       };
 
       setMessages((prev) => [...prev, tempMessage]);
@@ -304,6 +307,7 @@ useEffect(() => {
       timestamp: new Date(),
       status: 'sent',
       type: 'text',
+      isRead: false,
     };
 
     // optimistic UI
