@@ -41,7 +41,8 @@ export const uploadMessageFileAPI = async (
   formData.append('chatroomId', chatroomId);
   formData.append('receiverId', receiverId);
 
-  const response = await fetch('http://localhost:5000/api/messages/upload', {
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000';
+  const response = await fetch(`${BASE_URL}/api/messages/upload`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,

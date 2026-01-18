@@ -184,14 +184,14 @@ export function useCurrentUser() {
  * 
  * Architecture Rule: Profile picture is returned as part of the user object (field: profileImage).
  * Backend returns relative paths (e.g., /uploads/profile-pics/abc123.jpeg) which need to be
- * prefixed with the backend base URL (http://localhost:5000) for proper rendering.
+ * prefixed with the backend base URL (from NEXT_PUBLIC_BASE_URL env variable) for proper rendering.
  * 
  * @param user - User object
  * @param defaultAvatar - Default avatar URL to return if no profile image is available
  * @returns Profile image URL (with backend prefix if needed) or default avatar
  */
 export function getUserProfileImage(user: User | null | undefined, defaultAvatar?: string): string {
-  const BACKEND_BASE_URL = 'http://localhost:5000';
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000';
   const DEFAULT_AVATAR = defaultAvatar || '/default-avatar.svg';
   
   if (!user) return DEFAULT_AVATAR;
@@ -206,7 +206,7 @@ export function getUserProfileImage(user: User | null | undefined, defaultAvatar
       return profileImage;
     }
     // Otherwise, it's a relative path from the backend - prefix with backend URL
-    return `${BACKEND_BASE_URL}${profileImage}`;
+    return `${BASE_URL}${profileImage}`;
   }
   
   // Return default avatar if no profile image is available

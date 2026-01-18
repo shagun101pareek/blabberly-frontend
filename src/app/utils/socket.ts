@@ -7,8 +7,7 @@ import { io, Socket } from "socket.io-client";
 import { getAuthToken, getUserId } from "./auth";
 
 const SOCKET_URL =
-  process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000";
-  withCredentials: true;
+  process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000";
 
 let socket: Socket | null = null;
 

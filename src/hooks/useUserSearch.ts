@@ -48,8 +48,9 @@ export function useUserSearch(): UseUserSearchReturn {
         return;
       }
 
+      const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000';
       const response = await fetch(
-        `http://localhost:5000/api/users/search?q=${encodeURIComponent(query)}`,
+        `${BASE_URL}/api/users/search?q=${encodeURIComponent(query)}`,
         {
           method: 'GET',
           headers: {

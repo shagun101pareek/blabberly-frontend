@@ -26,7 +26,8 @@ export const getUserStatusAPI = async (userId: string): Promise<UserStatusRespon
     throw new Error('Invalid user ID provided');
   }
 
-  const response = await fetch(`http://localhost:5000/api/users/${userId}/status`, {
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000';
+  const response = await fetch(`${BASE_URL}/api/users/${userId}/status`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",

@@ -13,6 +13,7 @@ interface UIMessage extends Message {
   senderId: string;
   timestamp: Date;
   status: 'sent' | 'delivered' | 'seen';
+  content?: string; // For image messages, content contains the image URL
 }
 
 interface ChatWindowProps {
@@ -40,6 +41,20 @@ export default function ChatWindow({
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
+  // Helper function to normalize image URLs (convert relative to absolute)
+  const normalizeImageUrl = (url: string | undefined): string | undefined => {
+    if (!url) return undefined;
+    // If already a full URL, return as-is
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    // If relative path, prefix with backend URL
+    if (url.startsWith('/')) {
+      const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000';
+      return `${BASE_URL}${url}`;
+    }
+    return url;
+  };
 
   /* =============================
      REST → UI SYNC (MERGE SAFELY)
@@ -50,17 +65,27 @@ export default function ChatWindow({
       return;
     }
 
-    const normalized: UIMessage[] = chatRoom.messages.map((m: any) => ({
-      id: m.id || m._id,
-      text: m.text || m.content || '',
-      senderId: m.senderId || m.sender?._id || m.sender,
-      timestamp: new Date(m.timestamp || m.createdAt),
-      status: m.status || 'sent',
-      type: m.type || 'text',
-      fileUrl: m.fileUrl || m.file_url,
-      fileName: m.fileName || m.file_name,
-      isRead: m.isRead || false,
-    }));
+    const normalized: UIMessage[] = chatRoom.messages.map((m: any) => {
+      // STRICT: Trust backend data - ONLY use message.type
+      const messageType = m.type || 'text';
+      
+      // STRICT: Use content for both text and image messages
+      // Backend sends: { type: "image", content: "http://..." } or { type: "text", content: "text" }
+      const content = m.content || m.text || '';
+      
+      return {
+        id: m.id || m._id,
+        text: '', // Keep for backward compatibility, but use content for rendering
+        senderId: m.senderId || m.sender?._id || m.sender,
+        timestamp: new Date(m.timestamp || m.createdAt),
+        status: m.status || 'sent',
+        type: messageType,
+        content: content, // Store content for MessageBubble to render
+        fileUrl: m.fileUrl || m.file_url,
+        fileName: m.fileName || m.file_name,
+        isRead: m.isRead || false,
+      };
+    });
 
     setMessages((prev) => {
       const map = new Map(prev.map((m) => [m.id, m]));
@@ -95,13 +120,21 @@ export default function ChatWindow({
     if (!socket) return;
     
       const handleReceiveMessage = (msg: any) => {
+        // STRICT: Trust backend data - ONLY use message.type
+        const messageType = msg.type || 'text';
+        
+        // STRICT: Use content for both text and image messages
+        // Backend sends: { type: "image", content: "http://..." } or { type: "text", content: "text" }
+        const content = msg.content || msg.text || '';
+        
         const incoming: UIMessage = {
           id: msg._id,
-          text: msg.content || msg.text || '',
+          text: '', // Keep for backward compatibility, but use content for rendering
           senderId: msg.sender?._id || msg.sender,
           timestamp: new Date(msg.createdAt),
           status: msg.status || 'sent',
-          type: msg.type || 'text',
+          type: messageType,
+          content: content, // Store content for MessageBubble to render
           fileUrl: msg.fileUrl || msg.file_url,
           fileName: msg.fileName || msg.file_name,
           isRead: msg.isRead || false,
@@ -114,8 +147,8 @@ export default function ChatWindow({
               !(
                 m.id.startsWith('temp-') &&
                 m.senderId === incoming.senderId &&
-                ((m.type === 'text' && m.text === incoming.text) ||
-                 (m.type !== 'text' && m.fileUrl === incoming.fileUrl))
+                ((m.type === 'text' && m.content === incoming.content) ||
+                 (m.type !== 'text' && (m.content === incoming.content || m.fileUrl === incoming.fileUrl)))
               )
           );
     
@@ -259,23 +292,27 @@ useEffect(() => {
     try {
       const uploadResponse = await uploadMessageFileAPI(file, chatRoom.id, chatRoom.friendId);
       
+      const normalizedFileUrl = normalizeImageUrl(uploadResponse.fileUrl);
+      
       const tempMessage: UIMessage = {
         id: `temp-${Date.now()}`,
-        text: uploadResponse.fileType === 'image' ? '📷 Photo' : '📄 Document',
+        text: '', // Keep for backward compatibility, but use content for rendering
         senderId: currentUserId,
         timestamp: new Date(),
         status: 'sent',
         type: uploadResponse.fileType,
-        fileUrl: uploadResponse.fileUrl,
+        content: uploadResponse.fileType === 'image' ? normalizedFileUrl : '', // Store content for MessageBubble
+        fileUrl: normalizedFileUrl,
         fileName: uploadResponse.fileName,
         isRead: false,
       };
 
       setMessages((prev) => [...prev, tempMessage]);
 
+      // STRICT: For image messages, send the image URL as content (backend will use this)
       socket.emit('sendMessage', {
         chatroomId: chatRoom.id,
-        content: uploadResponse.fileType === 'image' ? '📷 Photo' : '📄 Document',
+        content: uploadResponse.fileType === 'image' ? uploadResponse.fileUrl : '',
         type: uploadResponse.fileType,
         fileUrl: uploadResponse.fileUrl,
         fileName: uploadResponse.fileName,
@@ -300,15 +337,16 @@ useEffect(() => {
   const handleSendMessage = () => {
     if (!message.trim() || !chatRoom || !socket) return;
 
-    const tempMessage: UIMessage = {
-      id: `temp-${Date.now()}`,
-      text: message,
-      senderId: currentUserId,
-      timestamp: new Date(),
-      status: 'sent',
-      type: 'text',
-      isRead: false,
-    };
+      const tempMessage: UIMessage = {
+        id: `temp-${Date.now()}`,
+        text: '', // Keep for backward compatibility, but use content for rendering
+        senderId: currentUserId,
+        timestamp: new Date(),
+        status: 'sent',
+        type: 'text',
+        content: message, // Store content for MessageBubble
+        isRead: false,
+      };
 
     // optimistic UI
     setMessages((prev) => [...prev, tempMessage]);

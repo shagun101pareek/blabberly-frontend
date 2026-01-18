@@ -17,6 +17,7 @@ export interface Message {
   isRead: boolean;
   status?: 'sent' | 'delivered' | 'seen';
   type?: 'text' | 'image' | 'pdf';
+  content?: string; // For image messages: image URL, for text messages: text content
   fileUrl?: string;
   fileName?: string;
 }

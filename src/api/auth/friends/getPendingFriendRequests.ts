@@ -11,8 +11,9 @@ export const getPendingFriendRequestsAPI =
       throw new Error("No authentication token found");
     }
 
+    const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000';
     const response = await fetch(
-      "http://localhost:5000/api/friend/requests/pending",
+      `${BASE_URL}/api/friend/requests/pending`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
