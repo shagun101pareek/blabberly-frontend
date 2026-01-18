@@ -56,7 +56,8 @@ export const uploadProfilePictureAPI = async (
   const formData = new FormData();
   formData.append('profileImage', file);
 
-  const response = await fetch('http://localhost:5000/api/users/profile-picture', {
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000';
+  const response = await fetch(`${BASE_URL}/api/users/profile-picture`, {
     method: 'PUT',
     headers: {
       'Authorization': `Bearer ${token}`,

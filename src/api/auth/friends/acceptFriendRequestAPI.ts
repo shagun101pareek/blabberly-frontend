@@ -13,7 +13,8 @@ export async function acceptFriendRequestAPI(requestId: string): Promise<any> {
     throw new Error('No authentication token found');
   }
 
-  const url = `http://localhost:5000/api/friend/requests/accept/${requestId}`;
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000';
+  const url = `${BASE_URL}/api/friend/requests/accept/${requestId}`;
   
   console.log('Accepting friend request:', { requestId, url });
 

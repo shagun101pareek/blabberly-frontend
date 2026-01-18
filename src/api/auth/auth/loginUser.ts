@@ -4,7 +4,8 @@ export type LoginUser = {
 };
 
 export const loginUserAPI = async (user: LoginUser) => {
-  const response = await fetch("http://localhost:5000/api/users/login", {
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000';
+  const response = await fetch(`${BASE_URL}/api/users/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

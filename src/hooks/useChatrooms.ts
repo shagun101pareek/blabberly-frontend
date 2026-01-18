@@ -25,13 +25,13 @@ function transformChatroom(room: ChatroomResponse, currentUserId: string | null)
     let friendAvatar: string | undefined = undefined;
     
     if (profileImage && profileImage.trim() !== '') {
-      const BACKEND_BASE_URL = 'http://localhost:5000';
+      const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000';
       // If it's already a full URL, use it as-is
       if (profileImage.startsWith('http://') || profileImage.startsWith('https://')) {
         friendAvatar = profileImage;
       } else {
         // Otherwise, it's a relative path from the backend - prefix with backend URL
-        friendAvatar = `${BACKEND_BASE_URL}${profileImage}`;
+        friendAvatar = `${BASE_URL}${profileImage}`;
       }
     }
 

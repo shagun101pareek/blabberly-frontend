@@ -11,7 +11,8 @@ export const markMessagesAsSeenAPI = async (chatroomId: string): Promise<void> =
     throw new Error('No authentication token found');
   }
 
-  const response = await fetch('http://localhost:5000/api/messages/seen', {
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000';
+  const response = await fetch(`${BASE_URL}/api/messages/seen`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",

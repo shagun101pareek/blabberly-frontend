@@ -29,7 +29,8 @@ export const sendMessageAPI = async (chatroomId: string, receiverId: string, con
     throw new Error('No authentication token found');
   }
 
-  const response = await fetch('http://localhost:5000/api/messages/send', {
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000';
+  const response = await fetch(`${BASE_URL}/api/messages/send`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

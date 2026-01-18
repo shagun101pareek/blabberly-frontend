@@ -29,8 +29,9 @@ export default function ChatView({ selectedChat, chatData }: ChatViewProps) {
 
     const fetchMessages = async () => {
       try {
+        const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000';
         const res = await fetch(
-          `http://localhost:5000/api/messages/${selectedChat}`,
+          `${BASE_URL}/api/messages/${selectedChat}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem('token')}`,
@@ -52,8 +53,9 @@ export default function ChatView({ selectedChat, chatData }: ChatViewProps) {
     if (!message.trim() || !selectedChat) return;
 
     try {
+      const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000';
       const res = await fetch(
-        `http://localhost:5000/api/messages/${selectedChat}`,
+        `${BASE_URL}/api/messages/${selectedChat}`,
         {
           method: 'POST',
           headers: {

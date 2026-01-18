@@ -38,7 +38,8 @@ export const getChatroomsAPI = async (): Promise<ChatroomResponse[]> => {
     throw new Error('No authentication token found');
   }
 
-  const response = await fetch("http://localhost:5000/api/chatrooms", {
+  const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000';
+  const response = await fetch(`${BASE_URL}/api/chatrooms`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
