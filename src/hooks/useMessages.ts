@@ -19,21 +19,51 @@ export interface Message {
   timestamp: Date;
   isRead: boolean;
   status?: 'sent' | 'delivered' | 'seen';
+  type?: 'text' | 'image' | 'pdf';
+  content?: string; // For image messages: image URL, for text messages: text content
+  fileUrl?: string;
+  fileName?: string;
 }
 
 /**
  * Transform backend message → frontend message
+ * CRITICAL: Preserve ALL fields from backend, especially type, content, fileUrl, fileName
  */
 function transformMessage(msg: any): Message {
-  return {
-    id: msg._id,
-    text: msg.content, // ✅ backend field
+  console.log('[useMessages] 🔍 transformMessage - BEFORE transform:', {
+    _id: msg._id,
+    type: msg.type,
+    content: msg.content?.substring(0, 50),
+    fileUrl: msg.fileUrl,
+    fileName: msg.fileName,
+  });
+
+  const transformed: Message = {
+    id: msg._id || msg.id,
+    text: msg.text || msg.content || '', // Keep for backward compatibility
     senderId:
       typeof msg.sender === "string" ? msg.sender : msg.sender?._id,
-    timestamp: new Date(msg.createdAt),
-    isRead: false, // can be extended later
-    status: msg.status || 'sent', // Use status from backend, default to 'sent'
+    timestamp: new Date(msg.createdAt || msg.timestamp),
+    isRead: msg.isRead || false,
+    status: msg.status || 'sent',
+    // CRITICAL: Preserve type from backend - NEVER default to 'text'
+    type: msg.type, // Use AS-IS from backend, don't default
+    // CRITICAL: Preserve content from backend
+    content: msg.content,
+    // CRITICAL: Preserve fileUrl and fileName from backend
+    fileUrl: msg.fileUrl || msg.file_url,
+    fileName: msg.fileName || msg.file_name,
   };
+
+  console.log('[useMessages] ✅ transformMessage - AFTER transform:', {
+    id: transformed.id,
+    type: transformed.type,
+    content: transformed.content?.substring(0, 50),
+    fileUrl: transformed.fileUrl,
+    fileName: transformed.fileName,
+  });
+
+  return transformed;
 }
 
 /**
@@ -71,11 +101,25 @@ export function useMessages(chatroomId: string | null) {
     try {
       const response = await getMessagesAPI(chatroomId);
 
+      console.log('[useMessages] 📥 API response BEFORE transform:', response.map((m: any) => ({
+        _id: m._id,
+        type: m.type,
+        content: m.content?.substring(0, 50),
+        fileUrl: m.fileUrl,
+      })));
+
       const transformed = response
         .map(transformMessage)
         .sort(
           (a, b) => a.timestamp.getTime() - b.timestamp.getTime()
         );
+
+      console.log('[useMessages] 📤 Messages AFTER transform, BEFORE setMessages:', transformed.map(m => ({
+        id: m.id,
+        type: m.type,
+        content: m.content?.substring(0, 50),
+        fileUrl: m.fileUrl,
+      })));
 
       // If switching to a new chatroom, replace messages
       // Otherwise, merge to preserve socket-updated messages
@@ -126,7 +170,8 @@ export function useMessages(chatroomId: string | null) {
   const addMessage = useCallback((message: Message) => {
     console.log('[useMessages] ➕ Adding message via addMessage:', {
       messageId: message.id,
-      text: message.text.substring(0, 50),
+      type: message.type,
+      content: message.content?.substring(0, 50) || message.text?.substring(0, 50),
       timestamp: message.timestamp,
     });
     

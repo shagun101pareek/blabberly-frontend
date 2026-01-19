@@ -13,6 +13,12 @@ export interface SendMessageResponse {
   status: 'sent' | 'delivered' | 'seen';
   readBy?: string[];
   __v?: number;
+  // CRITICAL: Preserve type and file fields from backend
+  type?: 'text' | 'image' | 'pdf';
+  fileUrl?: string;
+  file_url?: string; // Alternative field name
+  fileName?: string;
+  file_name?: string; // Alternative field name
 }
 
 /**
