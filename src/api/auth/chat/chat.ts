@@ -93,22 +93,34 @@ export function useChat() {
       content: string;
       messageId?: string;
       timestamp?: string;
+      type?: 'text' | 'image' | 'pdf';
+      fileUrl?: string;
+      fileName?: string;
     }) => {
       console.log('[useChat] 🔔 receiveMessage event received:', {
         chatroomId: data.chatroomId,
         messageId: data.messageId,
-        content: data.content.substring(0, 50),
+        type: data.type,
+        content: data.content?.substring(0, 50),
         timestamp: data.timestamp,
       });
 
       // Transform socket message to Message format
+      // CRITICAL: Preserve ALL fields from socket, especially type, content, fileUrl, fileName
       const newMessage: Message = {
         id: data.messageId || `temp_${Date.now()}`,
-        text: data.content,
+        text: data.content || '', // Keep for backward compatibility
         senderId: data.senderId,
         timestamp: data.timestamp ? new Date(data.timestamp) : new Date(),
         isRead: false,
         status: 'delivered', // Incoming messages are delivered
+        // CRITICAL: Preserve type from socket - NEVER default to 'text'
+        type: data.type, // Use AS-IS from socket, don't default
+        // CRITICAL: Preserve content from socket
+        content: data.content,
+        // CRITICAL: Preserve fileUrl and fileName from socket
+        fileUrl: data.fileUrl,
+        fileName: data.fileName,
       };
 
       const currentChatId = selectedChatIdRef.current;
@@ -177,13 +189,21 @@ export function useChat() {
       const response = await sendMessageAPI(chatId, chatroom.friendId, text);
 
       // Transform API response to Message format
+      // CRITICAL: Preserve ALL fields from API response, especially type, content, fileUrl, fileName
       const savedMessage: Message = {
         id: response._id,
-        text: response.content,
+        text: response.content || '', // Keep for backward compatibility
         senderId: typeof response.sender === "string" ? response.sender : response.sender?._id || senderId,
         timestamp: new Date(response.createdAt),
         isRead: false,
         status: response.status || 'sent', // Use status from API response
+        // CRITICAL: Preserve type from API - NEVER default to 'text'
+        type: (response as any).type, // Use AS-IS from API
+        // CRITICAL: Preserve content from API
+        content: response.content,
+        // CRITICAL: Preserve fileUrl and fileName from API
+        fileUrl: (response as any).fileUrl || (response as any).file_url,
+        fileName: (response as any).fileName || (response as any).file_name,
       };
 
       // Add message to UI from API response

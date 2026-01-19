@@ -12,12 +12,32 @@ interface MessageBubbleProps {
 
 export default function MessageBubble({ message, isMine, formatTime }: MessageBubbleProps) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const messageType = message.type || 'text';
+  
+  // CRITICAL: Log message.type BEFORE rendering to debug
+  console.log('[MessageBubble] 🎨 Rendering message:', {
+    id: message.id,
+    type: message.type,
+    content: message.content?.substring(0, 50),
+    hasContent: !!message.content,
+  });
+
+  // CRITICAL: Use message.type AS-IS - NEVER default to 'text'
+  // If type is undefined, that indicates a data issue, but we should still render
+  const messageType = message.type;
+
+  // CRITICAL: Warn if type is missing (indicates backend issue)
+  if (messageType === undefined) {
+    console.warn('[MessageBubble] ⚠️ Message missing type field:', {
+      id: message.id,
+      content: message.content?.substring(0, 50),
+    });
+  }
 
   const renderContent = () => {
+    // STRICT: If message.type === "image", render <img src={message.content} />
     if (messageType === 'image') {
-      // STRICT: If message.type === "image", render <img src={message.content} />
       if (!message.content) {
+        console.warn('[MessageBubble] ⚠️ Image message missing content:', message.id);
         return null;
       }
       
@@ -65,13 +85,25 @@ export default function MessageBubble({ message, isMine, formatTime }: MessageBu
       );
     }
 
+    // STRICT: If message.type === "text", render <p>{message.content}</p>
     if (messageType === 'text') {
-      // STRICT: If message.type === "text", render <p>{message.content}</p>
-      return <p className="chat-window-message-text">{message.content || message.text || ''}</p>;
+      const textContent = message.content || message.text || '';
+      // CRITICAL: Don't render empty text messages
+      if (!textContent.trim()) {
+        console.warn('[MessageBubble] ⚠️ Attempting to render empty text message, returning null:', {
+          id: message.id,
+        });
+        return null; // Don't render empty text bubbles
+      }
+      return <p className="chat-window-message-text">{textContent}</p>;
     }
 
+    // STRICT: If message.type === "pdf", render PDF link
     if (messageType === 'pdf') {
-      if (!message.fileUrl) return null;
+      if (!message.fileUrl) {
+        console.warn('[MessageBubble] ⚠️ PDF message missing fileUrl:', message.id);
+        return null;
+      }
       return (
         <div className="chat-window-message-pdf-container">
           <a
@@ -105,7 +137,13 @@ export default function MessageBubble({ message, isMine, formatTime }: MessageBu
       );
     }
 
-    // Default fallback (shouldn't happen)
+    // CRITICAL: If type is undefined or unknown, render as text but log warning
+    // This should NOT happen if backend is sending type correctly
+    console.warn('[MessageBubble] ⚠️ Unknown or missing message type, rendering as text:', {
+      id: message.id,
+      type: messageType,
+      content: message.content?.substring(0, 50),
+    });
     return <p className="chat-window-message-text">{message.content || message.text || ''}</p>;
   };
 
