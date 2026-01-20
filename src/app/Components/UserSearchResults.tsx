@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { SearchUser } from '@/hooks/useUserSearch';
 
 interface UserSearchResultsProps {
@@ -16,6 +17,15 @@ export default function UserSearchResults({
   error,
   onSendRequest,
 }: UserSearchResultsProps) {
+  const router = useRouter();
+
+  const handleUserClick = (userId: string, e: React.MouseEvent) => {
+    // Don't navigate if clicking on the button
+    if ((e.target as HTMLElement).closest('button')) {
+      return;
+    }
+    router.push(`/user/${userId}`);
+  };
   if (isLoading) {
     return (
       <div className="connections-search-results">
@@ -56,7 +66,12 @@ export default function UserSearchResults({
             .join(' ') || user.username;
 
           return (
-            <div key={user._id} className="connections-search-result-item">
+            <div 
+              key={user._id} 
+              className="connections-search-result-item"
+              onClick={(e) => handleUserClick(user._id, e)}
+              style={{ cursor: 'pointer' }}
+            >
               <div className="connections-search-result-avatar">
                 {user.firstName ? user.firstName.charAt(0).toUpperCase() : user.username.charAt(0).toUpperCase()}
               </div>
@@ -66,7 +81,10 @@ export default function UserSearchResults({
               </div>
               <button
                 className="connections-search-result-button"
-                onClick={() => onSendRequest?.(user._id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSendRequest?.(user._id);
+                }}
               >
                 Send Request
               </button>
