@@ -241,6 +241,14 @@ export default function ConnectionsPage() {
                     <div
                       key={request.id}
                       className="connections-card"
+                      onClick={(e) => {
+                        // Don't navigate if clicking on buttons
+                        if ((e.target as HTMLElement).closest('button')) {
+                          return;
+                        }
+                        router.push(`/user/${request.senderId}`);
+                      }}
+                      style={{ cursor: 'pointer' }}
                     >
                       <div className="flex items-center gap-4">
                         {/* Avatar */}
@@ -269,7 +277,10 @@ export default function ConnectionsPage() {
                         {/* Actions */}
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => handleAcceptRequest(request.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAcceptRequest(request.id);
+                            }}
                             disabled={processingRequestIds.has(request.id) || friendRequestsLoading}
                             className="connections-accept-button"
                           >
@@ -299,7 +310,10 @@ export default function ConnectionsPage() {
                             )}
                           </button>
                           <button
-                            onClick={() => handleRejectRequest(request.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRejectRequest(request.id);
+                            }}
                             disabled={processingRequestIds.has(request.id) || friendRequestsLoading}
                             className="connections-reject-button"
                           >
@@ -347,11 +361,23 @@ export default function ConnectionsPage() {
                     <div
                       key={suggestion.id || `suggestion-${index}`}
                       className="connections-card"
+                      onClick={(e) => {
+                        // Don't navigate if clicking on dismiss button or connect button
+                        if ((e.target as HTMLElement).closest('.connections-card-dismiss') || 
+                            (e.target as HTMLElement).closest('.connections-connect-button')) {
+                          return;
+                        }
+                        if (suggestion.id) {
+                          router.push(`/user/${suggestion.id}`);
+                        }
+                      }}
+                      style={{ cursor: 'pointer' }}
                     >
                       {/* Dismiss Button */}
                       <button
                         className="connections-card-dismiss"
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           // Remove suggestion from list
                           // You can implement this functionality if needed
                         }}
@@ -446,7 +472,10 @@ export default function ConnectionsPage() {
 
                         {/* Connect Button */}
                         <button
-                          onClick={() => handleSendFriendRequest(suggestion.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSendFriendRequest(suggestion.id);
+                          }}
                           disabled={processingSuggestionIds.has(suggestion.id) || suggestionsLoading}
                           className="connections-connect-button"
                         >

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { useUserSearch, SearchResult } from '../types/user';
 
 interface SearchUserModalProps {
@@ -10,6 +11,7 @@ interface SearchUserModalProps {
 }
 
 export default function SearchUserModal({ isOpen, onClose, onRequestSent }: SearchUserModalProps) {
+  const router = useRouter();
   const {
     searchQuery,
     setSearchQuery,
@@ -56,7 +58,11 @@ export default function SearchUserModal({ isOpen, onClose, onRequestSent }: Sear
     }
   };
 
-  const handleSendRequest = async (user: SearchResult) => {
+  const handleSendRequest = async (user: SearchResult, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    
     console.log('handleSendRequest called with user:', user);
     console.log('user.id:', user.id, 'type:', typeof user.id);
     
@@ -69,6 +75,15 @@ export default function SearchUserModal({ isOpen, onClose, onRequestSent }: Sear
     if (success && onRequestSent) {
       onRequestSent(user.id);
     }
+  };
+
+  const handleUserClick = (userId: string, e: React.MouseEvent) => {
+    // Don't navigate if clicking on the button or status badge
+    if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('.search-modal-status')) {
+      return;
+    }
+    router.push(`/user/${userId}`);
+    onClose();
   };
 
   if (!isOpen) return null;
@@ -170,7 +185,8 @@ export default function SearchUserModal({ isOpen, onClose, onRequestSent }: Sear
                 <div 
                   key={user.id} 
                   className="search-modal-user"
-                  style={{ animationDelay: `${index * 50}ms` }}
+                  style={{ animationDelay: `${index * 50}ms`, cursor: 'pointer' }}
+                  onClick={(e) => handleUserClick(user.id, e)}
                 >
                   <div className="search-modal-user-avatar">
                     {user.avatar ? (
@@ -201,7 +217,7 @@ export default function SearchUserModal({ isOpen, onClose, onRequestSent }: Sear
                     ) : (
                       <button 
                         className="search-modal-add-btn"
-                        onClick={() => handleSendRequest(user)}
+                        onClick={(e) => handleSendRequest(user, e)}
                       >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                           <path d="M16 21V19C16 16.7909 14.2091 15 12 15H5C2.79086 15 1 16.7909 1 19V21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
