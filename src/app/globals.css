@@ -1028,7 +1028,7 @@ textarea::placeholder {
 /* ==================== CHAT LIST STYLES ==================== */
 
 .chat-list-sidebar {
-  width: 325px;
+  width: 450px;
   background: #fff;
   border-right: 1px solid #e5e7eb;
   display: flex;
@@ -4117,6 +4117,228 @@ textarea::placeholder {
 .connections-card-mutual:hover {
   color: #ff2158;
   text-decoration: underline;
+}
+
+/* ==================== EDIT PROFILE MODAL STYLES ==================== */
+
+.edit-profile-modal {
+  width: 100%;
+  max-width: 500px;
+}
+
+.edit-profile-modal-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 1.5rem 0;
+  text-align: center;
+}
+
+.edit-profile-modal-loading,
+.edit-profile-modal-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+.edit-profile-modal-loading .connections-spinner {
+  border-color: #d1d5db;
+  border-top-color: #ff2158;
+}
+
+.edit-profile-modal-error {
+  margin-bottom: 1.5rem;
+  padding: 0.75rem;
+  background-color: #fef2f2;
+  border-radius: 0.5rem;
+  border: 1px solid #fecaca;
+}
+
+.edit-profile-modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.edit-profile-picture-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding-bottom: 1.25rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.edit-profile-picture-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.edit-profile-picture-preview {
+  width: 100px;
+  height: 100px;
+  border-radius: 9999px;
+  overflow: hidden;
+  background: linear-gradient(to right, #ff2158, #f6349b);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.edit-profile-picture-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.edit-profile-picture-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.edit-profile-picture-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  color: #374151;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.edit-profile-picture-btn:hover:not(:disabled) {
+  background-color: #f3f4f6;
+}
+
+.edit-profile-picture-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.edit-profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.edit-profile-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.edit-profile-input,
+.edit-profile-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.75rem;
+  font-size: 0.9375rem;
+  color: #111827;
+  background-color: #f9fafb;
+  transition: background-color 0.2s, border-color 0.2s;
+  font-family: inherit;
+}
+
+.edit-profile-input:focus,
+.edit-profile-textarea:focus {
+  outline: none;
+  border-color: #ff2158;
+  background-color: white;
+}
+
+.edit-profile-input:disabled,
+.edit-profile-textarea:disabled {
+  background-color: #f9fafb;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.edit-profile-textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.edit-profile-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.edit-profile-cancel-btn,
+.edit-profile-save-btn {
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-profile-cancel-btn {
+  background-color: #f9fafb;
+  color: #374151;
+}
+
+.edit-profile-cancel-btn:hover:not(:disabled) {
+  background-color: #f3f4f6;
+}
+
+.edit-profile-save-btn {
+  background: linear-gradient(to right, #ff2158, #f6349b);
+  color: white;
+}
+
+.edit-profile-save-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.edit-profile-cancel-btn:disabled,
+.edit-profile-save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.upload-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ==================== PROFILE PAGE STYLES ==================== */
