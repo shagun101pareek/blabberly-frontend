@@ -9,6 +9,9 @@ import { useUser } from '../context/UserContext';
 import { uploadProfilePictureAPI } from '@/api/auth/users/uploadProfilePicture';
 import { getUserProfileImage } from '../types/user';
 import { getAuthToken, getUserId } from '../utils/auth';
+import { getUserConnectionsCountAPI } from '@/api/auth/users/getUserConnectionsCount';
+import ConnectionsModal from '../Components/ConnectionsModal';
+import EditProfileModal from '../Components/EditProfileModal';
 
 interface Profile {
   _id: string;
@@ -16,6 +19,7 @@ interface Profile {
   firstName?: string;
   lastName?: string;
   bio?: string;
+  tagline?: string;
   profilePicture?: string;
   avatarUrl?: string;
   onlineStatus?: string;
@@ -34,6 +38,9 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [connectionsCount, setConnectionsCount] = useState<number | null>(null);
+  const [isConnectionsModalOpen, setIsConnectionsModalOpen] = useState(false);
+  const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
 
   const profileImageUrl = getUserProfileImage(user);
   const initials = user?.username?.charAt(0).toUpperCase() || 'U';
@@ -80,8 +87,52 @@ export default function ProfilePage() {
       }
     };
 
+    const fetchConnectionsCount = async () => {
+      const userId = getUserId();
+      if (!userId) return;
+
+      try {
+        const data = await getUserConnectionsCountAPI(userId);
+        setConnectionsCount(data.count);
+      } catch (err) {
+        console.error('Failed to fetch connections count:', err);
+        // Don't set error state, just log it
+      }
+    };
+
     fetchProfile();
+    fetchConnectionsCount();
   }, []);
+
+  const refreshProfile = async () => {
+    const userId = getUserId();
+    if (!userId) return;
+
+    try {
+      const token = getAuthToken();
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const BASE_URL =
+        process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000';
+      const res = await fetch(`${BASE_URL}/api/users/${userId}`, {
+        method: 'GET',
+        headers,
+      });
+
+      if (res.ok) {
+        const data = (await res.json()) as Profile;
+        setProfile(data);
+      }
+    } catch (err) {
+      console.error('Failed to refresh profile:', err);
+    }
+  };
 
   const handleProfileImageClick = () => {
     fileInputRef.current?.click();
@@ -132,13 +183,64 @@ export default function ProfilePage() {
     // Profile tab is already active, no need to navigate
   };
 
-  const fullName = profile
-    ? `${profile.firstName || ''} ${profile.lastName || ''}`.trim() || profile.username
-    : user?.username || 'User';
-  const displayName = fullName || profile?.username || user?.username || 'User';
-  const bio = profile?.bio || 'Welcome to my profile!';
-  const connections = profile?.stats?.connections ?? 0;
+  const capitalizeFirstLetter = (str: string): string => {
+    if (!str) return '';
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  };
+
+  const getDisplayName = () => {
+    if (!profile) return user?.username || 'User';
+    
+    const firstName = profile.firstName || '';
+    const lastName = profile.lastName || '';
+    const username = profile.username || '';
+    
+    if (firstName && lastName) {
+      return `${capitalizeFirstLetter(firstName)} ${capitalizeFirstLetter(lastName)}`;
+    }
+    if (firstName) {
+      return capitalizeFirstLetter(firstName);
+    }
+    if (lastName) {
+      return capitalizeFirstLetter(lastName);
+    }
+    return username || user?.username || 'User';
+  };
+
+  const displayName = getDisplayName();
+  const username = profile?.username || user?.username || '';
+  const connections = connectionsCount !== null ? connectionsCount : (profile?.stats?.connections ?? 0);
   const avatarUrl = profile?.profilePicture || profile?.avatarUrl || profileImageUrl;
+
+  const displayBio = profile
+    ? typeof profile.bio === "string" && profile.bio.trim().length > 0
+      ? profile.bio
+      : profile.firstName && profile.firstName.trim().length > 0
+        ? `Hi! My name is ${capitalizeFirstLetter(profile.firstName)} and I like to interact with people.`
+        : "Hi! I like to interact with people."
+    : "Hi! I like to interact with people.";
+
+  const displayTagline = profile
+    ? typeof profile.tagline === "string" && profile.tagline.trim().length > 0
+      ? profile.tagline
+      : "Always open to meaningful conversations"
+    : "Always open to meaningful conversations";
+
+  const handleConnectionsClick = () => {
+    setIsConnectionsModalOpen(true);
+  };
+
+  const handleEditProfileClick = () => {
+    setIsEditProfileModalOpen(true);
+  };
+
+  const handleProfileUpdate = async (updatedData?: Partial<Profile>) => {
+    if (updatedData) {
+      setProfile(prev => prev ? { ...prev, ...updatedData } : null);
+    } else {
+      await refreshProfile();
+    }
+  };
 
   if (loading) {
     return (
@@ -187,17 +289,30 @@ export default function ProfilePage() {
               <div className="profile-hero-main-content">
                 {/* Left Section - Text and Buttons */}
                 <div className="profile-hero-left">
-                  <h1 className="profile-hero-headline">
-                    Make <span className="profile-hero-highlight">Connections</span> That Engage, Delight, and Connect
-                  </h1>
+                  <div className="mb-6">
+                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 mb-2">
+                      {displayName}
+                    </h1>
+                    {username && (
+                      <p className="text-base sm:text-lg text-slate-500">
+                        @{username}
+                      </p>
+                    )}
+                  </div>
                   <p className="profile-hero-bio">
-                    Hi, I'm {displayName}! {bio}
+                    {displayBio}
+                  </p>
+                  <p className="text-slate-500 italic mt-2 mb-4">
+                    {displayTagline}
                   </p>
                   <div className="profile-hero-actions">
-                    <button className="profile-hero-primary-btn">
+                    <button 
+                      className="profile-hero-primary-btn"
+                      onClick={handleEditProfileClick}
+                    >
                       Edit Profile
                     </button>
-                    <button className="profile-hero-secondary-btn" onClick={() => router.push('/connections')}>
+                    <button className="profile-hero-secondary-btn" onClick={handleConnectionsClick}>
                       View Connections
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path
@@ -304,10 +419,14 @@ export default function ProfilePage() {
 
               {/* Bottom Section - Statistics */}
               <div className="profile-hero-stats">
-                <div className="profile-hero-stat">
-                  <div className="profile-hero-stat-number">{connections}+</div>
+                <button 
+                  className="profile-hero-stat cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={handleConnectionsClick}
+                  type="button"
+                >
+                  <div className="profile-hero-stat-number">{connections}</div>
                   <div className="profile-hero-stat-label">Connections</div>
-                </div>
+                </button>
                 <div className="profile-hero-stat">
                   <div className="profile-hero-stat-number">100%</div>
                   <div className="profile-hero-stat-label">Active</div>
@@ -332,6 +451,21 @@ export default function ProfilePage() {
             )}
           </div>
         </div>
+        <ConnectionsModal
+          isOpen={isConnectionsModalOpen}
+          onClose={() => setIsConnectionsModalOpen(false)}
+        />
+        <EditProfileModal
+          isOpen={isEditProfileModalOpen}
+          onClose={() => setIsEditProfileModalOpen(false)}
+          onUpdate={handleProfileUpdate}
+          initialData={{
+            username: profile?.username || user?.username || '',
+            bio: profile?.bio || '',
+            tagline: profile?.tagline || '',
+            profilePicture: profile?.profilePicture || profile?.avatarUrl || profileImageUrl,
+          }}
+        />
       </div>
     </ProtectedRoute>
   );

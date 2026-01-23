@@ -273,8 +273,30 @@ export default function ProfilePage() {
     return null;
   }
 
-  const fullName = `${profile.firstName || ''} ${profile.lastName || ''}`.trim();
-  const username = profile.username ? `@${profile.username}` : '';
+  const capitalizeFirstLetter = (str: string): string => {
+    if (!str) return '';
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  };
+
+  const getDisplayName = () => {
+    const firstName = profile.firstName || '';
+    const lastName = profile.lastName || '';
+    const username = profile.username || '';
+    
+    if (firstName && lastName) {
+      return `${capitalizeFirstLetter(firstName)} ${capitalizeFirstLetter(lastName)}`;
+    }
+    if (firstName) {
+      return capitalizeFirstLetter(firstName);
+    }
+    if (lastName) {
+      return capitalizeFirstLetter(lastName);
+    }
+    return username || 'User';
+  };
+
+  const displayName = getDisplayName();
+  const username = profile.username || '';
   const bio = profile.bio || '';
   const avatarUrl =
     profile.profilePicture || profile.avatarUrl || '/default-avatar.svg';
@@ -312,12 +334,14 @@ export default function ProfilePage() {
                   <div>
                     <div className="flex items-start gap-4">
                       <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h1 className="text-2xl md:text-3xl font-semibold text-gray-900 break-words">
-                            {fullName || username || 'User'}
+                        <div className="mb-3">
+                          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 break-words mb-2">
+                            {displayName}
                           </h1>
                           {username && (
-                            <span className="text-sm text-gray-500">{username}</span>
+                            <p className="text-base sm:text-lg text-gray-500">
+                              @{username}
+                            </p>
                           )}
                         </div>
                         <div className="mt-3">{renderActionButtons()}</div>
@@ -362,7 +386,7 @@ export default function ProfilePage() {
                     <div className="user-profile-avatar">
                       <img
                         src={avatarUrl}
-                        alt={fullName || 'Profile picture'}
+                        alt={displayName || 'Profile picture'}
                       />
                     </div>
                   </div>
