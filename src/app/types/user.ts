@@ -20,6 +20,8 @@ export interface User {
   /** Avatar URL (kept for backward compatibility, prefer profileImage) */
   avatar?: string;
   email?: string;
+  /** Timestamp when user profile was last updated (for cache-busting profile images) */
+  updatedAt?: string | Date;
 }
 
 export interface SearchResult extends User {
@@ -180,15 +182,53 @@ export function useCurrentUser() {
 }
 
 /**
- * Get profile image URL from user object
+ * Add cache-busting query parameter to an image URL
+ * 
+ * @param url - Image URL to add cache-busting to
+ * @param timestamp - Timestamp to use for cache-busting (Date, string, or number)
+ * @returns URL with cache-busting query parameter
+ */
+export function addCacheBuster(url: string, timestamp?: string | Date | number): string {
+  if (!url) return url;
+  
+  // Don't add cache-buster to default avatars or data URLs
+  if (url === '/default-avatar.svg' || url.startsWith('data:') || url.includes('default-avatar')) {
+    return url;
+  }
+  
+  // Convert timestamp to number (milliseconds)
+  let cacheBuster: number;
+  if (timestamp) {
+    if (typeof timestamp === 'string') {
+      cacheBuster = new Date(timestamp).getTime();
+    } else if (timestamp instanceof Date) {
+      cacheBuster = timestamp.getTime();
+    } else {
+      cacheBuster = timestamp;
+    }
+  } else {
+    // Fallback to current timestamp if no timestamp provided
+    cacheBuster = Date.now();
+  }
+  
+  // Add cache-busting query parameter
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}v=${cacheBuster}`;
+}
+
+/**
+ * Get profile image URL from user object with cache-busting
  * 
  * Architecture Rule: Profile picture is returned as part of the user object (field: profileImage).
  * Backend returns relative paths (e.g., /uploads/profile-pics/abc123.jpeg) which need to be
  * prefixed with the backend base URL (from NEXT_PUBLIC_BASE_URL env variable) for proper rendering.
  * 
+ * This function automatically adds a cache-busting query parameter using user.updatedAt or
+ * falls back to current timestamp to ensure browsers reload the image when it's updated.
+ * 
  * @param user - User object
  * @param defaultAvatar - Default avatar URL to return if no profile image is available
- * @returns Profile image URL (with backend prefix if needed) or default avatar
+ * @returns Profile image URL (with backend prefix and cache-busting if needed) or default avatar
  */
 export function getUserProfileImage(user: User | null | undefined, defaultAvatar?: string): string {
   const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000';
@@ -201,15 +241,21 @@ export function getUserProfileImage(user: User | null | undefined, defaultAvatar
   
   // If profileImage exists and is non-empty, prefix with backend URL
   if (profileImage && profileImage.trim() !== '') {
+    let imageUrl: string;
+    
     // Check if it's already a full URL (starts with http:// or https://)
     if (profileImage.startsWith('http://') || profileImage.startsWith('https://')) {
-      return profileImage;
+      imageUrl = profileImage;
+    } else {
+      // Otherwise, it's a relative path from the backend - prefix with backend URL
+      imageUrl = `${BASE_URL}${profileImage}`;
     }
-    // Otherwise, it's a relative path from the backend - prefix with backend URL
-    return `${BASE_URL}${profileImage}`;
+    
+    // Add cache-busting query parameter using user.updatedAt or fallback to current timestamp
+    return addCacheBuster(imageUrl, user.updatedAt);
   }
   
-  // Return default avatar if no profile image is available
+  // Return default avatar if no profile image is available (no cache-busting needed)
   return DEFAULT_AVATAR;
 }
 

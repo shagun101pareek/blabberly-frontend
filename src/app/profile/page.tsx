@@ -7,7 +7,7 @@ import ChatNavbar from '../Components/ChatNavbar';
 import ChatSidebar from '../Components/ChatSidebar';
 import { useUser } from '../context/UserContext';
 import { uploadProfilePictureAPI } from '@/api/auth/users/uploadProfilePicture';
-import { getUserProfileImage } from '../types/user';
+import { getUserProfileImage, addCacheBuster } from '../types/user';
 import { getAuthToken, getUserId } from '../utils/auth';
 import { getUserConnectionsCountAPI } from '@/api/auth/users/getUserConnectionsCount';
 import ConnectionsModal from '../Components/ConnectionsModal';
@@ -20,9 +20,11 @@ interface Profile {
   lastName?: string;
   bio?: string;
   tagline?: string;
-  profilePicture?: string;
-  avatarUrl?: string;
+  // profilePicture?: string;
+  // avatarUrl?: string;
+  profileImage?: string;
   onlineStatus?: string;
+  updatedAt?: string | Date; // Profile last updated timestamp for cache-busting
   stats?: {
     connections?: number;
     mutuals?: number;
@@ -161,8 +163,11 @@ export default function ProfilePage() {
       // Call the profile-picture upload API
       const response = await uploadProfilePictureAPI(file);
       
-      // Update user state with the new profileImage
-      updateUser({ profileImage: response.profileImage });
+      // Update user state with the new profileImage and current timestamp for cache-busting
+      updateUser({ 
+        profileImage: response.profileImage,
+        updatedAt: new Date().toISOString()
+      });
       
       // Clear the file input
       if (fileInputRef.current) {
@@ -210,7 +215,22 @@ export default function ProfilePage() {
   const displayName = getDisplayName();
   const username = profile?.username || user?.username || '';
   const connections = connectionsCount !== null ? connectionsCount : (profile?.stats?.connections ?? 0);
-  const avatarUrl = profile?.profilePicture || profile?.avatarUrl || profileImageUrl;
+  
+  // Construct avatarUrl with cache-busting
+  // let avatarUrl = profile?.profilePicture || profile?.avatarUrl || profileImageUrl;
+  let avatarUrl = profile?.profileImage || profileImageUrl;
+  
+  // Normalize URL (add base URL if relative path) and add cache-busting if needed
+  if (avatarUrl && avatarUrl !== '/default-avatar.svg' && !avatarUrl.includes('default-avatar')) {
+    // Normalize relative paths to absolute URLs
+    if (avatarUrl.startsWith('/') && !avatarUrl.startsWith('//')) {
+      const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000';
+      avatarUrl = `${BASE_URL}${avatarUrl}`;
+    }
+    // Use profile.updatedAt if available, otherwise use user.updatedAt, or fallback to current timestamp
+    const timestamp = profile?.updatedAt || user?.updatedAt;
+    avatarUrl = addCacheBuster(avatarUrl, timestamp);
+  }
 
   const displayBio = profile
     ? typeof profile.bio === "string" && profile.bio.trim().length > 0
@@ -463,7 +483,8 @@ export default function ProfilePage() {
             username: profile?.username || user?.username || '',
             bio: profile?.bio || '',
             tagline: profile?.tagline || '',
-            profilePicture: profile?.profilePicture || profile?.avatarUrl || profileImageUrl,
+            // profilePicture: profile?.profilePicture || profile?.avatarUrl || profileImageUrl,
+            profilePicture: profile?.profileImage,
           }}
         />
       </div>

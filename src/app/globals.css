@@ -2774,6 +2774,11 @@ textarea::placeholder {
   flex-shrink: 0;
   position: relative;
   overflow: hidden;
+  transition: opacity 0.2s ease;
+}
+
+.chat-window-header-avatar:hover {
+  opacity: 0.8;
 }
 
 .chat-window-header-avatar img {
@@ -2820,6 +2825,11 @@ textarea::placeholder {
   font-weight: 600;
   color: #1f2937;
   margin: 0 0 0.125rem 0;
+  transition: color 0.2s ease;
+}
+
+.chat-window-header-name:hover {
+  color: #ff2158;
 }
 
 .chat-window-header-status {
