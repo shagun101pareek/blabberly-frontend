@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { ChatRoom, Message } from '@/api/auth/chat/chat';
 import UserStatus from './UserStatus';
 import { useSocket } from '../context/SocketContext';
@@ -31,6 +32,7 @@ export default function ChatWindow({
   onMarkAsRead,
   hasFriends = false,
 }: ChatWindowProps) {
+  const router = useRouter();
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<UIMessage[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -853,13 +855,53 @@ useEffect(() => {
   const isNewConnection =
     chatRoom.isNewConnection && messages.length === 0;
 
+  const handleProfileClick = () => {
+    if (chatRoom?.friendId) {
+      router.push(`/user/${chatRoom.friendId}`);
+    }
+  };
+
+  // Helper function to normalize image URLs (convert relative to absolute)
+  const normalizeAvatarUrl = (url: string | undefined): string | undefined => {
+    if (!url) return undefined;
+    // If already a full URL, return as-is
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    // If relative path, prefix with backend URL
+    if (url.startsWith('/')) {
+      const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000';
+      return `${BASE_URL}${url}`;
+    }
+    return url;
+  };
+
   return (
     <div className="chat-window">
       {/* Header */}
       <div className="chat-window-header">
-        <div className="chat-window-header-avatar">
+        <div 
+          className="chat-window-header-avatar"
+          onClick={handleProfileClick}
+          style={{ cursor: 'pointer' }}
+        >
           {chatRoom.friendAvatar ? (
-            <img src={chatRoom.friendAvatar} alt={chatRoom.friendUsername} />
+            <img 
+              src={normalizeAvatarUrl(chatRoom.friendAvatar) || chatRoom.friendAvatar} 
+              alt={chatRoom.friendUsername}
+              onError={(e) => {
+                // Fallback to initials if image fails to load
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                const parent = target.parentElement;
+                if (parent && !parent.querySelector('span.chat-window-header-avatar-fallback')) {
+                  const span = document.createElement('span');
+                  span.className = 'chat-window-header-avatar-fallback';
+                  span.textContent = chatRoom.friendUsername.charAt(0).toUpperCase();
+                  parent.appendChild(span);
+                }
+              }}
+            />
           ) : (
             <span>{chatRoom.friendUsername.charAt(0).toUpperCase()}</span>
           )}
@@ -867,7 +909,11 @@ useEffect(() => {
         </div>
 
         <div className="chat-window-header-info">
-          <h3 className="chat-window-header-name">
+          <h3 
+            className="chat-window-header-name"
+            onClick={handleProfileClick}
+            style={{ cursor: 'pointer' }}
+          >
             {chatRoom.friendUsername}
           </h3>
           <UserStatus userId={chatRoom.friendId} variant="inline" />

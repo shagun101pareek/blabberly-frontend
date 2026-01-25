@@ -113,7 +113,11 @@ export default function EditProfileModal({
         try {
           const uploadResponse = await uploadProfilePictureAPI(profilePicture);
           if (uploadResponse.profileImage) {
-            updateUser({ profileImage: uploadResponse.profileImage });
+            // Update user with new profile image and current timestamp for cache-busting
+            updateUser({ 
+              profileImage: uploadResponse.profileImage,
+              updatedAt: new Date().toISOString()
+            });
           }
         } catch (uploadError) {
           console.error('Failed to upload profile picture:', uploadError);

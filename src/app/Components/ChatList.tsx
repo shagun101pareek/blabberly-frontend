@@ -49,9 +49,26 @@ function truncateMessage(text: string | undefined, maxLength: number = 30): stri
  */
 function ChatAvatar({ room }: { room: ChatRoom }) {
   const [imageError, setImageError] = useState(false);
-  const hasProfilePicture = room.friendAvatar && !imageError;
+  
+  // Helper function to normalize image URLs (convert relative to absolute)
+  const normalizeAvatarUrl = (url: string | undefined): string | undefined => {
+    if (!url) return undefined;
+    // If already a full URL, return as-is
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    // If relative path, prefix with backend URL
+    if (url.startsWith('/')) {
+      const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000';
+      return `${BASE_URL}${url}`;
+    }
+    return url;
+  };
 
-  if (hasProfilePicture && room.friendAvatar) {
+  const normalizedAvatar = normalizeAvatarUrl(room.friendAvatar);
+  const hasProfilePicture = normalizedAvatar && !imageError;
+
+  if (hasProfilePicture && normalizedAvatar) {
     // Append cache-busting query parameter using updatedAt or current timestamp
     const cacheBuster = room.friendUpdatedAt 
       ? (typeof room.friendUpdatedAt === 'string' 
@@ -59,7 +76,7 @@ function ChatAvatar({ room }: { room: ChatRoom }) {
           : room.friendUpdatedAt.getTime())
       : Date.now();
     
-    const imageUrl = `${room.friendAvatar}${room.friendAvatar.includes('?') ? '&' : '?'}v=${cacheBuster}`;
+    const imageUrl = `${normalizedAvatar}${normalizedAvatar.includes('?') ? '&' : '?'}v=${cacheBuster}`;
 
     return (
       <Image
