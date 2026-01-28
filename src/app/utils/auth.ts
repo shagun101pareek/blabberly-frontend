@@ -1,6 +1,9 @@
 /**
  * Authentication utility functions
  */
+import { UserResponse } from '../types/user';
+
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:5000";
 
 /**
  * Store authentication token in localStorage
@@ -83,3 +86,22 @@ export const getUserId = (): string | null => {
   return null;
 };
 
+export const getUser = async (token: string, userId: string): Promise<UserResponse> => {
+  const res = await fetch(`${BASE_URL}/api/users/${userId}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch user: ${res.statusText}`);
+  }
+
+  const data: UserResponse = await res.json();
+  
+  console.log('User Response:', JSON.stringify(data, null, 4));
+  
+  return data;
+};

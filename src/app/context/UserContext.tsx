@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types/user';
-import { getAuthToken, getUserId } from '../utils/auth';
+import { getAuthToken, getUserId, getUser } from '../utils/auth';
 
 interface UserContextType {
   user: User | null;
@@ -24,6 +24,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       const userId = getUserId();
       
       if (token && userId) {
+        const user = await getUser(token, userId); 
         // For now, create a basic user object from available data
         // Later, you can fetch from get-me API if available
         // Check if user data exists in localStorage (set from login/signup)
@@ -44,8 +45,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
         } else {
           setUser({
             id: userId,
-            username: 'User',
-            profileImage: undefined,
+            username: user?.username,
+            profileImage: user?.profileImage,
             avatar: undefined,
           });
         }
@@ -85,6 +86,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
 export function useUser() {
   const context = useContext(UserContext);
+  console.log('user', context?.user);
   if (context === undefined) {
     throw new Error('useUser must be used within a UserProvider');
   }
