@@ -28,6 +28,33 @@ export interface SearchResult extends User {
   friendshipStatus: 'none' | 'pending' | 'friends';
 }
 
+/**
+ * User response interface for API responses
+ * Matches the structure returned from GET /api/users/:userId
+ */
+export interface UserResponse {
+  _id: string;
+  username: string;
+  firstName?: string;
+  lastName?: string;
+  bio?: string;
+  tagline?: string;
+  profileImage?: string;
+  onlineStatus?: string;
+  stats: {
+    connections: number;
+    mutuals: number;
+    projects: number;
+  };
+  isFollowing: boolean;
+  relationship: {
+    status: 'none' | 'pending' | 'connected' | null;
+    direction: 'sent' | 'received' | null;
+  };
+  joinedAt: string;
+  updatedAt: string;
+}
+
 // Mock user data for demonstration
 const mockUsers: User[] = [
   { id: '1', username: 'alex_dev', avatar: '' },
@@ -241,18 +268,19 @@ export function getUserProfileImage(user: User | null | undefined, defaultAvatar
   
   // If profileImage exists and is non-empty, prefix with backend URL
   if (profileImage && profileImage.trim() !== '') {
-    let imageUrl: string;
+    let profileImageUrl: string;
     
     // Check if it's already a full URL (starts with http:// or https://)
     if (profileImage.startsWith('http://') || profileImage.startsWith('https://')) {
-      imageUrl = profileImage;
+      profileImageUrl = profileImage;
     } else {
-      // Otherwise, it's a relative path from the backend - prefix with backend URL
-      imageUrl = `${BASE_URL}${profileImage}`;
+      // Otherwise, it's a relative path from the backend - prefix with backend URL and path prefix
+      // const PATH_PREFIX = 'Users/shagunpareek/Desktop/blabberly-backend';
+      profileImageUrl = `${BASE_URL}${profileImage}`;
     }
     
     // Add cache-busting query parameter using user.updatedAt or fallback to current timestamp
-    return addCacheBuster(imageUrl, user.updatedAt);
+    return addCacheBuster(profileImageUrl, user.updatedAt);
   }
   
   // Return default avatar if no profile image is available (no cache-busting needed)
