@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import type { ChatRoom } from '@/api/auth/chat/chat';
 import type { FriendRequest } from '@/hooks/useFriendRequests';
@@ -49,6 +49,17 @@ function truncateMessage(text: string | undefined, maxLength: number = 30): stri
  */
 function ChatAvatar({ room }: { room: ChatRoom }) {
   const [imageError, setImageError] = useState(false);
+  
+  // Debug logging to verify each room has unique avatar
+  useEffect(() => {
+    console.log('[ChatAvatar]', {
+      roomId: room.id,
+      friendId: room.friendId,
+      friendUsername: room.friendUsername,
+      friendAvatar: room.friendAvatar,
+      friendUpdatedAt: room.friendUpdatedAt,
+    });
+  }, [room.id, room.friendId, room.friendUsername, room.friendAvatar, room.friendUpdatedAt]);
   
   // Helper function to normalize image URLs (convert relative to absolute)
   const normalizeAvatarUrl = (url: string | undefined): string | undefined => {

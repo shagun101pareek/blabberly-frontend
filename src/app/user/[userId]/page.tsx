@@ -27,8 +27,9 @@ interface Profile {
   lastName?: string;
   bio?: string;
   tagline?: string;
-  profilePicture?: string;
-  avatarUrl?: string;
+  profileImage?: string; // Primary field from backend
+  profilePicture?: string; // Legacy field for backward compatibility
+  avatarUrl?: string; // Legacy field for backward compatibility
   onlineStatus?: string;
   updatedAt?: string | Date; // Profile last updated timestamp for cache-busting
   stats?: {
@@ -85,7 +86,12 @@ export default function ProfilePage() {
 
         const BASE_URL =
           process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000';
-        const res = await fetch(`${BASE_URL}/api/users/${userId}`, {
+        const userIdString = Array.isArray(userId) ? userId[0] : userId;
+        const apiUrl = `${BASE_URL}/api/users/${userIdString}`;
+        
+        console.log('[ProfilePage] Fetching profile for userId:', userIdString, 'URL:', apiUrl);
+        
+        const res = await fetch(apiUrl, {
           method: 'GET',
           headers,
         });
@@ -96,6 +102,14 @@ export default function ProfilePage() {
 
         const data = (await res.json()) as Profile;
         if (!isMounted) return;
+
+        console.log('[ProfilePage] Profile data received:', {
+          _id: data._id,
+          username: data.username,
+          profileImage: data.profileImage,
+          profilePicture: data.profilePicture,
+          avatarUrl: data.avatarUrl,
+        });
 
         setProfile(data);
         setRelationship(data.relationship ?? null);
@@ -245,7 +259,7 @@ export default function ProfilePage() {
           type="button"
           onClick={handleFollow}
           disabled={isFollowing}
-          className="px-4 py-2 rounded-full bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+          className="profile-follow-button"
         >
           {isFollowing ? 'Sending...' : 'Follow'}
         </button>
@@ -257,7 +271,7 @@ export default function ProfilePage() {
         <button
           type="button"
           disabled
-          className="px-4 py-2 rounded-full bg-gray-200 text-gray-600 text-sm font-medium cursor-default"
+          className="profile-requested-button"
         >
           Requested
         </button>
@@ -266,18 +280,18 @@ export default function ProfilePage() {
 
     if (status === 'pending' && direction === 'received') {
       return (
-        <div className="flex items-center gap-3">
+        <div className="profile-action-buttons-container">
           <button
             type="button"
             onClick={handleAccept}
-            className="px-4 py-2 rounded-full bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors"
+            className="profile-accept-button"
           >
             Accept
           </button>
           <button
             type="button"
             onClick={handleReject}
-            className="px-4 py-2 rounded-full border border-gray-300 text-gray-800 text-sm font-medium hover:bg-gray-50 transition-colors"
+            className="profile-reject-button"
           >
             Reject
           </button>
@@ -290,7 +304,7 @@ export default function ProfilePage() {
         <button
           type="button"
           onClick={handleMessage}
-          className="px-4 py-2 rounded-full bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors"
+          className="profile-message-button"
         >
           Message
         </button>
@@ -303,7 +317,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <ProtectedRoute>
-        <div className="chat-page flex flex-col">
+        <div className="chat-page user-profile-page-layout">
           <ChatNavbar />
           <div className="chat-main-container">
             <ChatSidebar activeTab={isOwnProfile ? "profile" : "chats"} onTabChange={handleTabChange} />
@@ -321,7 +335,7 @@ export default function ProfilePage() {
   if (error) {
     return (
       <ProtectedRoute>
-        <div className="chat-page flex flex-col">
+        <div className="chat-page user-profile-page-layout">
           <ChatNavbar />
           <div className="chat-main-container">
             <ChatSidebar activeTab={isOwnProfile ? "profile" : "chats"} onTabChange={handleTabChange} />
@@ -364,7 +378,6 @@ export default function ProfilePage() {
 
   const displayName = getDisplayName();
   const username = profile.username || '';
-  const profileImageUrl = getUserProfileImage(user);
   const initials = profile.username?.charAt(0).toUpperCase() || 'U';
   
   const displayBio = typeof profile.bio === "string" && profile.bio.trim().length > 0
@@ -377,21 +390,17 @@ export default function ProfilePage() {
     ? profile.tagline
     : "Always open to meaningful conversations";
 
-  // Construct avatarUrl with cache-busting
-  let avatarUrl =
-    profile.profilePicture || profile.avatarUrl || profileImageUrl || '/default-avatar.svg';
+  // Construct avatarUrl from the profile being viewed (not the logged-in user)
+  // Create a User object from profile data to use with getUserProfileImage
+  const profileUser = {
+    id: profile._id,
+    username: profile.username,
+    profileImage: profile.profileImage || profile.profilePicture || profile.avatarUrl,
+    updatedAt: profile.updatedAt,
+  };
   
-  // Normalize URL (add base URL if relative path) and add cache-busting if needed
-  if (avatarUrl && avatarUrl !== '/default-avatar.svg' && !avatarUrl.includes('default-avatar')) {
-    // Normalize relative paths to absolute URLs
-    if (avatarUrl.startsWith('/') && !avatarUrl.startsWith('//')) {
-      const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000';
-      avatarUrl = `${BASE_URL}${avatarUrl}`;
-    }
-    // Use profile.updatedAt if available, otherwise fallback to current timestamp
-    const timestamp = profile.updatedAt;
-    avatarUrl = addCacheBuster(avatarUrl, timestamp);
-  }
+  // Use getUserProfileImage with the profile user data (not the logged-in user)
+  const avatarUrl = getUserProfileImage(profileUser);
   const connections = connectionsCount !== null ? connectionsCount : (profile.stats?.connections ?? 0);
   const mutualsFromProfile = profile.stats?.mutuals ?? null;
 
@@ -415,7 +424,7 @@ export default function ProfilePage() {
 
   return (
     <ProtectedRoute>
-      <div className="chat-page flex flex-col">
+      <div className="chat-page user-profile-page-layout">
         <ChatNavbar />
         <div className="chat-main-container">
           <ChatSidebar activeTab={isOwnProfile ? "profile" : "chats"} onTabChange={handleTabChange} />
@@ -424,12 +433,12 @@ export default function ProfilePage() {
               <div className="profile-hero-main-content">
                 {/* Left Section - Text and Buttons */}
                 <div className="profile-hero-left">
-                  <div className="mb-6">
-                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 mb-2">
+                  <div className="user-profile-header-section">
+                    <h1 className="user-profile-display-name">
                       {displayName}
                     </h1>
                     {username && (
-                      <p className="text-base sm:text-lg text-slate-500">
+                      <p className="user-profile-username">
                         @{username}
                       </p>
                     )}
@@ -437,7 +446,7 @@ export default function ProfilePage() {
                   <p className="profile-hero-bio">
                     {displayBio}
                   </p>
-                  <p className="text-slate-500 italic mt-2 mb-4">
+                  <p className="user-profile-tagline">
                     {displayTagline}
                   </p>
                   <div className="profile-hero-actions">
@@ -463,7 +472,7 @@ export default function ProfilePage() {
                         </button>
                       </>
                     ) : (
-                      <div className="flex items-center gap-3">
+                      <div className="profile-action-buttons-container">
                         {renderActionButtons()}
                       </div>
                     )}
@@ -536,11 +545,10 @@ export default function ProfilePage() {
               {/* Bottom Section - Statistics */}
               <div className="profile-hero-stats">
                 <button 
-                  className="profile-hero-stat cursor-pointer hover:opacity-80 transition-opacity"
+                  className="profile-hero-stat profile-hero-stat-clickable"
                   onClick={isOwnProfile ? handleConnectionsClick : undefined}
                   type="button"
                   disabled={!isOwnProfile}
-                  style={{ cursor: isOwnProfile ? 'pointer' : 'default' }}
                 >
                   <div className="profile-hero-stat-number">{connections}</div>
                   <div className="profile-hero-stat-label">Connections</div>
@@ -550,11 +558,10 @@ export default function ProfilePage() {
                   <div className="profile-hero-stat-label">Active</div>
                 </div>
                 <button
-                  className="profile-hero-stat cursor-pointer hover:opacity-80 transition-opacity"
+                  className="profile-hero-stat profile-hero-stat-clickable"
                   onClick={handleMutualFriendsClick}
                   type="button"
                   disabled={mutuals === null}
-                  style={{ cursor: mutuals !== null ? 'pointer' : 'default' }}
                 >
                   <div className="profile-hero-stat-number">{mutuals || 0}+</div>
                   <div className="profile-hero-stat-label">Mutual Friends</div>
@@ -586,7 +593,7 @@ export default function ProfilePage() {
                 username: profile?.username || user?.username || '',
                 bio: profile?.bio || '',
                 tagline: profile?.tagline || '',
-                profilePicture: profile?.profilePicture || profile?.avatarUrl || profileImageUrl,
+                profilePicture: profile?.profileImage || profile?.profilePicture || profile?.avatarUrl || getUserProfileImage(user),
               }}
             />
           </>
