@@ -322,7 +322,7 @@ export default function ProfilePage() {
                   <p className="profile-hero-bio">
                     {displayBio}
                   </p>
-                  <p className="text-slate-500 italic mt-2 mb-4">
+                  <p className="text-slate-900 font-large italic mt-2 mb-4">
                     {displayTagline}
                   </p>
                   <div className="profile-hero-actions">

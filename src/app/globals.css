@@ -4412,9 +4412,10 @@ textarea::placeholder {
 }
 
 .profile-hero-bio {
-  font-size: 1.125rem;
+  font-size: 2.125rem;
   color: #4b5563;
   line-height: 1.6;
+  font-weight: 600;
   margin: 0;
   max-width: 500px;
 }
@@ -4702,7 +4703,8 @@ textarea::placeholder {
   }
 
   .profile-hero-bio {
-    font-size: 1rem;
+    font-size: 1.125rem;
+    font-weight: 600;
   }
 
   .profile-hero-actions {
@@ -4818,4 +4820,159 @@ textarea::placeholder {
   height: 100%;
   width: 100%;
   object-fit: cover;
+}
+
+/* ==================== USER PROFILE PAGE STYLES ==================== */
+
+.user-profile-page-layout {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header Section */
+.user-profile-header-section {
+  margin-bottom: 1.5rem;
+}
+
+.user-profile-display-name {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+}
+
+@media (min-width: 640px) {
+  .user-profile-display-name {
+    font-size: 3rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .user-profile-display-name {
+    font-size: 3.75rem;
+  }
+}
+
+.user-profile-username {
+  font-size: 1rem;
+  color: #64748b;
+  margin: 0;
+}
+
+@media (min-width: 640px) {
+  .user-profile-username {
+    font-size: 1.125rem;
+  }
+}
+
+.user-profile-tagline {
+  color: #0f172a;
+  font-size: 1.25rem;
+  font-style: italic;
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Action Buttons Container */
+.profile-action-buttons-container {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* ==================== PROFILE ACTION BUTTONS ==================== */
+
+.profile-follow-button {
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  background-color: #2563eb;
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.profile-follow-button:hover:not(:disabled) {
+  background-color: #1d4ed8;
+}
+
+.profile-follow-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.profile-requested-button {
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  background-color: #e5e7eb;
+  color: #4b5563;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: none;
+  cursor: default;
+}
+
+.profile-accept-button {
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  background-color: #16a34a;
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.profile-accept-button:hover:not(:disabled) {
+  background-color: #15803d;
+}
+
+.profile-reject-button {
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  border: 1px solid #d1d5db;
+  background-color: white;
+  color: #1f2937;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.profile-reject-button:hover:not(:disabled) {
+  background-color: #f9fafb;
+}
+
+.profile-message-button {
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  background-color: #4f46e5;
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.profile-message-button:hover:not(:disabled) {
+  background-color: #4338ca;
+}
+
+/* Profile Hero Stat Clickable */
+.profile-hero-stat-clickable {
+  cursor: pointer;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.profile-hero-stat-clickable:hover:not(:disabled) {
+  opacity: 0.8;
+}
+
+.profile-hero-stat-clickable:disabled {
+  cursor: default;
 }

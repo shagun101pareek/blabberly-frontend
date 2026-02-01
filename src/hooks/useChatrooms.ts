@@ -5,7 +5,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { getChatroomsAPI, type ChatroomResponse } from '@/api/auth/chat/getChatrooms';
-import { getUserId } from '@/app/utils/auth';
+import { getUserId, getAuthToken } from '@/app/utils/auth';
 import type { ChatRoom } from '@/api/auth/chat/chat';
 import { useSocket } from '@/app/context/SocketContext';
 
@@ -17,8 +17,23 @@ function transformChatroom(room: ChatroomResponse, currentUserId: string | null)
 
   // For non-group chats, find the other participant
   if (!room.isGroup && room.participants.length === 2) {
-    const otherParticipant = room.participants.find(p => p._id !== currentUserId);
-    if (!otherParticipant) return null;
+    // Convert currentUserId to string for comparison (handles ObjectId/string mismatch)
+    const currentUserIdStr = String(currentUserId);
+    
+    const otherParticipant = room.participants.find(p => {
+      // Convert both to strings for reliable comparison
+      const participantId = String(p._id);
+      return participantId !== currentUserIdStr;
+    });
+    
+    if (!otherParticipant) {
+      console.warn('[transformChatroom] Could not find other participant in chatroom:', {
+        roomId: room._id,
+        currentUserId: currentUserIdStr,
+        participants: room.participants.map(p => ({ id: String(p._id), username: p.username })),
+      });
+      return null;
+    }
 
     // Extract profile picture URL (prioritize profileImage, fallback to profilePicture)
     const profileImage = otherParticipant.profileImage || otherParticipant.profilePicture;
@@ -34,6 +49,16 @@ function transformChatroom(room: ChatroomResponse, currentUserId: string | null)
         friendAvatar = `${BASE_URL}${profileImage}`;
       }
     }
+
+    // Debug logging to help identify the issue
+    console.log('[transformChatroom]', {
+      roomId: room._id,
+      currentUserId: currentUserIdStr,
+      otherParticipantId: String(otherParticipant._id),
+      otherParticipantUsername: otherParticipant.username,
+      profileImage: profileImage,
+      friendAvatar: friendAvatar,
+    });
 
     // Determine preview text based on lastMessage type
     let previewText = room.lastMessage?.text || '';
@@ -97,6 +122,52 @@ function truncateMessage(text: string | undefined, maxLength: number = 30): stri
 }
 
 /**
+ * Fetch user profile picture for a participant
+ * This is used when the chatrooms API doesn't return profile images
+ */
+async function fetchUserProfilePicture(userId: string): Promise<string | undefined> {
+  try {
+    const token = getAuthToken();
+    if (!token) {
+      console.warn(`[fetchUserProfilePicture] No auth token for userId: ${userId}`);
+      return undefined;
+    }
+
+    const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:5000';
+    const res = await fetch(`${BASE_URL}/api/users/${userId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!res.ok) {
+      console.warn(`[fetchUserProfilePicture] Failed to fetch profile for ${userId}:`, res.statusText);
+      return undefined;
+    }
+
+    const data = await res.json();
+    // Handle both profileImage and profilePicture fields (backend may return either)
+    const profileImage = data.profileImage || data.profilePicture;
+    
+    if (profileImage && profileImage.trim() !== '') {
+      // If it's already a full URL, return as-is
+      if (profileImage.startsWith('http://') || profileImage.startsWith('https://')) {
+        return profileImage;
+      }
+      // Otherwise, it's a relative path - prefix with backend URL
+      return `${BASE_URL}${profileImage}`;
+    }
+    
+    return undefined;
+  } catch (err) {
+    console.error(`[fetchUserProfilePicture] Error fetching profile for ${userId}:`, err);
+    return undefined;
+  }
+}
+
+/**
  * Hook for fetching and managing chatrooms
  */
 export function useChatrooms() {
@@ -123,6 +194,37 @@ export function useChatrooms() {
       const transformedRooms = rooms
         .map(room => transformChatroom(room, currentUserId))
         .filter((room): room is ChatRoom => room !== null);
+      
+      // Fetch profile pictures for rooms that don't have them
+      // This happens when the chatrooms API doesn't return profile images
+      const roomsNeedingPictures = transformedRooms.filter(room => !room.friendAvatar);
+      
+      if (roomsNeedingPictures.length > 0) {
+        console.log(`[fetchChatrooms] Fetching profile pictures for ${roomsNeedingPictures.length} users`);
+        
+        // Fetch profile pictures in parallel for better performance
+        const profilePicturePromises = roomsNeedingPictures.map(async (room) => {
+          const profilePicture = await fetchUserProfilePicture(room.friendId);
+          return { roomId: room.id, friendId: room.friendId, profilePicture };
+        });
+        
+        const profilePictures = await Promise.all(profilePicturePromises);
+        
+        // Create a map of friendId -> profilePicture for quick lookup
+        const pictureMap = new Map(
+          profilePictures
+            .filter(result => result.profilePicture)
+            .map(result => [result.friendId, result.profilePicture!])
+        );
+        
+        // Update rooms with fetched profile pictures
+        transformedRooms.forEach(room => {
+          if (!room.friendAvatar && pictureMap.has(room.friendId)) {
+            room.friendAvatar = pictureMap.get(room.friendId);
+            console.log(`[fetchChatrooms] ✅ Updated avatar for ${room.friendUsername}:`, room.friendAvatar);
+          }
+        });
+      }
       
       // Preserve existing messages when updating chatrooms
       // This prevents socket-updated messages from being lost
