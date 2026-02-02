@@ -599,7 +599,7 @@ textarea::placeholder {
   flex: 1;
   margin: 0;
   background: #fff;
-  padding-top: 4rem; /* Account for fixed navbar */
+  padding-top: 4.7rem; /* Account for fixed navbar */
   height: 100%;
   box-sizing: border-box;
   overflow: hidden;
@@ -620,6 +620,7 @@ textarea::placeholder {
   left: 0;
   right: 0;
   z-index: 20;
+  height: 75px;
   background-color: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid rgb(226 232 240);
@@ -629,13 +630,14 @@ textarea::placeholder {
   margin-left: auto;
   margin-right: auto;
   display: flex;
-  height: 4rem;
+  height: 5rem;
   /* max-width: 95rem; */
   min-width: 100vw;
   align-items: center;
   justify-content: space-between;
   padding-left: 4rem;
   padding-right: 1rem;
+  gap: 1rem;
 }
 
 @media (min-width: 640px) {
@@ -643,12 +645,27 @@ textarea::placeholder {
     padding-left: 1.5rem;
     padding-right: 1.5rem;
   }
+  
+  .chat-navbar-search {
+    display: flex;
+    width: 60%;
+  }
 }
 
 @media (min-width: 1024px) {
   .chat-navbar-container {
     padding-left: 8rem;
     padding-right: 2rem;
+  }
+  
+  .chat-navbar-search {
+    width: 100px;
+  }
+}
+
+@media (max-width: 639px) {
+  .chat-navbar-search {
+    display: none;
   }
 }
 
@@ -659,7 +676,7 @@ textarea::placeholder {
 .chat-navbar-brand {
   display: flex;
   align-items: flex-start;
-  
+  flex-shrink: 0;
 }
 
 .chat-navbar-logo {
@@ -679,7 +696,37 @@ textarea::placeholder {
 .chat-navbar-right {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0;
+  flex-shrink: 0;
+}
+
+/* =======================
+   Search Section
+======================= */
+
+.chat-navbar-search {
+  position: relative;
+  display: flex;
+  margin-right: 2rem;
+  align-items: flex-end;
+  width: 310px;
+}
+
+.chat-navbar-search .connections-search-container {
+  width: 100%;
+  max-width: 100%;
+}
+
+.chat-navbar-search .connections-search-input {
+  width: 100%;
+}
+
+.chat-navbar-search .connections-search-results {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  width: 300px;
+  z-index: 100;
 }
 
 /* =======================
@@ -1700,7 +1747,7 @@ textarea::placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6b6b6b;
+  color: #ffc4d3;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   pointer-events: none;
@@ -2756,6 +2803,7 @@ textarea::placeholder {
   border-bottom: 1px solid #e5e7eb;
   display: flex;
   align-items: center;
+  height: 80px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
@@ -3606,10 +3654,10 @@ textarea::placeholder {
 }
 
 .connections-search-input {
-  width: 100%;
-  padding: 0.875rem 1rem 0.875rem 3rem;
+  width: 54%;
+  padding: 0.5rem 1rem 0.5rem 3rem;
   border: 1px solid #e5e7eb;
-  border-radius: 0.75rem;
+  border-radius: 3.75rem;
   font-size: 0.9375rem;
   background: #ffffff;
   transition: all 0.2s;
@@ -3739,29 +3787,6 @@ textarea::placeholder {
   color: #6b7280;
   margin: 0;
   line-height: 1.2;
-}
-
-.connections-search-result-button {
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  background: linear-gradient(to right, #ff2158, #f6349b);
-  color: white;
-  font-size: 0.875rem;
-  font-weight: 500;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s;
-  flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(255, 33, 88, 0.3);
-}
-
-.connections-search-result-button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(255, 33, 88, 0.4);
-}
-
-.connections-search-result-button:active {
-  transform: translateY(0);
 }
 
 .connections-page-container {
@@ -4359,7 +4384,7 @@ textarea::placeholder {
   display: flex;
   flex-direction: column;
   background: #ffffff;
-  padding: 4rem 6rem;
+  padding: 4rem 8rem;
   overflow-y: auto;
   position: relative;
 }
@@ -4420,6 +4445,48 @@ textarea::placeholder {
   max-width: 500px;
 }
 
+.profile-hero-name-section {
+  margin-bottom: 1.5rem;
+}
+
+.profile-hero-name {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.2;
+}
+
+.profile-hero-username {
+  font-size: 1rem;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.profile-hero-tagline {
+  color: #0f172a;
+  font-size: 1.225rem;
+  font-style: italic;
+  margin: 0.5rem 0 1rem 0;
+}
+
+@media (min-width: 640px) {
+  .profile-hero-name {
+    font-size: 3rem;
+  }
+  
+  .profile-hero-username {
+    font-size: 1.125rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .profile-hero-name {
+    font-size: 3.75rem;
+  }
+}
+
 .profile-hero-actions {
   display: flex;
   align-items: center;
@@ -4468,15 +4535,17 @@ textarea::placeholder {
 .profile-hero-right {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   position: relative;
-  height: 500px;
+  height: 700px;
 }
 
 .profile-hero-image-wrapper {
-  position: relative;
+  position: absolute;
   width: 100%;
-  height: 100%;
+  top: 0;
+  left: 0;
+  bottom: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4484,33 +4553,30 @@ textarea::placeholder {
 
 .profile-hero-circle {
   position: absolute;
-  width: 400px;
-  height: 400px;
+  width: 600px;
+  height: 600px;
   border-radius: 50%;
   background: #f3f4f6;
   opacity: 0.6;
   z-index: 1;
-}
-
-.profile-hero-curve {
-  position: absolute;
-  width: 450px;
-  height: 450px;
-  z-index: 2;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
 }
 
+
 .profile-hero-avatar-wrapper {
-  position: relative;
-  width: 450px;
-  height: 450px;
+  position: absolute;
+  width: 600px;
+  height: 600px;
   border-radius: 50%;
   overflow: hidden;
   z-index: 3;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
   background: linear-gradient(135deg, #9333ea 0%, #3b82f6 100%);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .profile-hero-avatar {
@@ -4616,8 +4682,6 @@ textarea::placeholder {
 .profile-hero-stats {
   display: flex;
   gap: 4rem;
-  padding-top: 3rem;
-  border-top: 1px solid #e5e7eb;
 }
 
 .profile-hero-stat {
@@ -4884,11 +4948,11 @@ textarea::placeholder {
 /* ==================== PROFILE ACTION BUTTONS ==================== */
 
 .profile-follow-button {
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 1.5rem;
   border-radius: 9999px;
   background-color: #2563eb;
   color: white;
-  font-size: 0.875rem;
+  font-size: 1.3rem;
   font-weight: 500;
   border: none;
   cursor: pointer;
@@ -4952,7 +5016,7 @@ textarea::placeholder {
   border-radius: 9999px;
   background-color: #4f46e5;
   color: white;
-  font-size: 0.875rem;
+  font-size: 1.3rem;
   font-weight: 500;
   border: none;
   cursor: pointer;

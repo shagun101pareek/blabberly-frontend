@@ -476,6 +476,31 @@ export default function ProfilePage() {
                         {renderActionButtons()}
                       </div>
                     )}
+                       {/* Bottom Section - Statistics */}
+              <div className="profile-hero-stats">
+                <button 
+                  className="profile-hero-stat profile-hero-stat-clickable"
+                  onClick={isOwnProfile ? handleConnectionsClick : undefined}
+                  type="button"
+                  disabled={!isOwnProfile}
+                >
+                  <div className="profile-hero-stat-number">{connections}</div>
+                  <div className="profile-hero-stat-label">Connections</div>
+                </button>
+                <button
+                  className="profile-hero-stat profile-hero-stat-clickable"
+                  onClick={handleMutualFriendsClick}
+                  type="button"
+                  disabled={mutuals === null}
+                >
+                  <div className="profile-hero-stat-number">{mutuals || 0}</div>
+                  { mutuals && mutuals > 1 ? (
+                    <div className="profile-hero-stat-label">Mutual Friends</div>
+                  ) : (
+                    <div className="profile-hero-stat-label">Mutual Friend</div>
+                  )}
+                </button>
+              </div>
                   </div>
                 </div>
 
@@ -519,54 +544,11 @@ export default function ProfilePage() {
                         }}
                       />
                     </div>
-                    {/* Icons */}
-                    <div className="profile-hero-icon profile-hero-icon-1">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="5" y="2" width="14" height="20" rx="2" stroke="currentColor" strokeWidth="2" />
-                        <path d="M9 6H15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                      </svg>
-                    </div>
-                    <div className="profile-hero-icon profile-hero-icon-2">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="3" y="3" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="2" />
-                        <path d="M8 21L12 17L16 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
-                    <div className="profile-hero-icon profile-hero-icon-3">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M4 16L8 12L12 16L20 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M20 12V20H4V4H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Bottom Section - Statistics */}
-              <div className="profile-hero-stats">
-                <button 
-                  className="profile-hero-stat profile-hero-stat-clickable"
-                  onClick={isOwnProfile ? handleConnectionsClick : undefined}
-                  type="button"
-                  disabled={!isOwnProfile}
-                >
-                  <div className="profile-hero-stat-number">{connections}</div>
-                  <div className="profile-hero-stat-label">Connections</div>
-                </button>
-                <div className="profile-hero-stat">
-                  <div className="profile-hero-stat-number">100%</div>
-                  <div className="profile-hero-stat-label">Active</div>
-                </div>
-                <button
-                  className="profile-hero-stat profile-hero-stat-clickable"
-                  onClick={handleMutualFriendsClick}
-                  type="button"
-                  disabled={mutuals === null}
-                >
-                  <div className="profile-hero-stat-number">{mutuals || 0}+</div>
-                  <div className="profile-hero-stat-label">Mutual Friends</div>
-                </button>
-              </div>
+           
             </div>
           </div>
         </div>

@@ -79,15 +79,6 @@ export default function UserSearchResults({
                 <p className="connections-search-result-name">{fullName}</p>
                 <p className="connections-search-result-username">@{user.username}</p>
               </div>
-              <button
-                className="connections-search-result-button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSendRequest?.(user._id);
-                }}
-              >
-                Send Request
-              </button>
             </div>
           );
         })}
