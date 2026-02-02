@@ -1,17 +1,14 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import ProtectedRoute from '../Components/ProtectedRoute';
 import ChatNavbar from '../Components/ChatNavbar';
 import ChatSidebar from '../Components/ChatSidebar';
-import UserSearchInput from '../Components/UserSearchInput';
-import UserSearchResults from '../Components/UserSearchResults';
 import MutualFriendsModal from '../Components/MutualFriendsModal';
 import { useFriendRequests } from '@/hooks/useFriendRequests';
 import { useFriendSuggestions } from '@/hooks/useFriendSuggestions';
 import { useFriends } from '@/hooks/useFriends';
-import { useUserSearch } from '@/hooks/useUserSearch';
 import { useMutualFriends } from '@/hooks/useMutualFriends';
 import { getUserId } from '../utils/auth';
 
@@ -19,9 +16,7 @@ export default function ConnectionsPage() {
   const router = useRouter();
   const [processingRequestIds, setProcessingRequestIds] = useState<Set<string>>(new Set());
   const [processingSuggestionIds, setProcessingSuggestionIds] = useState<Set<string>>(new Set());
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [selectedMutualFriendsUserId, setSelectedMutualFriendsUserId] = useState<string | null>(null);
-  const searchContainerRef = useRef<HTMLDivElement>(null);
 
   // Get logged-in user ID
   const loggedInUserId = getUserId();
@@ -46,36 +41,6 @@ export default function ConnectionsPage() {
     loading: mutualFriendsLoading,
     error: mutualFriendsError,
   } = useMutualFriends();
-
-  // User search hook
-  const {
-    searchQuery,
-    searchResults,
-    isLoading: isSearchLoading,
-    error: searchError,
-    setSearchQuery,
-    clearResults,
-  } = useUserSearch();
-
-  // Handle click outside to close search results
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        searchContainerRef.current &&
-        !searchContainerRef.current.contains(event.target as Node)
-      ) {
-        setIsSearchFocused(false);
-      }
-    };
-
-    if (isSearchFocused) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isSearchFocused]);
 
   const handleAcceptRequest = useCallback(async (requestId: string) => {
     setProcessingRequestIds(prev => new Set([...prev, requestId]));
@@ -185,26 +150,9 @@ export default function ConnectionsPage() {
             {/* Page Header */}
             <div className="mb-6">
               <h1 className="text-3xl mt-5 font-bold text-slate-900">Connections</h1>
-              <p className="mt-2 text-sm text-slate-600">̵
+              <p className="mt-2 text-sm text-slate-600">
                 Manage your friend requests and discover new connections
               </p>
-            </div>
-
-            {/* Search Bar */}
-            <div className="mb-8 connections-search-wrapper" ref={searchContainerRef}>
-              <UserSearchInput
-                value={searchQuery}
-                onChange={setSearchQuery}
-                onFocus={() => setIsSearchFocused(true)}
-                placeholder="Search users by name or username"
-              />
-              {isSearchFocused && (searchQuery.length >= 2 || isSearchLoading || searchError) && (
-                <UserSearchResults
-                  results={searchResults}
-                  isLoading={isSearchLoading}
-                  error={searchError}
-                />
-              )}
             </div>
 
             {/* Friend Requests Section */}

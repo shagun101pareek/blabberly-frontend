@@ -309,12 +309,12 @@ export default function ProfilePage() {
               <div className="profile-hero-main-content">
                 {/* Left Section - Text and Buttons */}
                 <div className="profile-hero-left">
-                  <div className="mb-6">
-                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 mb-2">
+                  <div className="profile-hero-name-section">
+                    <h1 className="profile-hero-name">
                       {displayName}
                     </h1>
                     {username && (
-                      <p className="text-base sm:text-lg text-slate-500">
+                      <p className="profile-hero-username">
                         @{username}
                       </p>
                     )}
@@ -322,7 +322,7 @@ export default function ProfilePage() {
                   <p className="profile-hero-bio">
                     {displayBio}
                   </p>
-                  <p className="text-slate-900 font-large italic mt-2 mb-4">
+                  <p className="profile-hero-tagline">
                     {displayTagline}
                   </p>
                   <div className="profile-hero-actions">
@@ -344,6 +344,21 @@ export default function ProfilePage() {
                         />
                       </svg>
                     </button>
+                       {/* Bottom Section - Statistics
+              <div className="profile-hero-stats">
+                <button 
+                  className="profile-hero-stat cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={handleConnectionsClick}
+                  type="button"
+                >
+                  <div className="profile-hero-stat-number">{connections}</div>
+                  <div className="profile-hero-stat-label">Connections</div>
+                </button>
+                <div className="profile-hero-stat">
+                  <div className="profile-hero-stat-number">{profile?.stats?.mutuals || 0}+</div>
+                  <div className="profile-hero-stat-label">Mutual Friends</div>
+                </div>
+              </div> */}
                   </div>
                 </div>
 
@@ -414,48 +429,12 @@ export default function ProfilePage() {
                       )}
                     </button>
                   </div>
-                  {/* Icons */}
-                  <div className="profile-hero-icon profile-hero-icon-1">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <rect x="5" y="2" width="14" height="20" rx="2" stroke="currentColor" strokeWidth="2" />
-                      <path d="M9 6H15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                    </svg>
-                  </div>
-                  <div className="profile-hero-icon profile-hero-icon-2">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <rect x="3" y="3" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="2" />
-                      <path d="M8 21L12 17L16 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                  <div className="profile-hero-icon profile-hero-icon-3">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M4 16L8 12L12 16L20 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M20 12V20H4V4H12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
                 </div>
+
+           
               </div>
               </div>
 
-              {/* Bottom Section - Statistics */}
-              <div className="profile-hero-stats">
-                <button 
-                  className="profile-hero-stat cursor-pointer hover:opacity-80 transition-opacity"
-                  onClick={handleConnectionsClick}
-                  type="button"
-                >
-                  <div className="profile-hero-stat-number">{connections}</div>
-                  <div className="profile-hero-stat-label">Connections</div>
-                </button>
-                <div className="profile-hero-stat">
-                  <div className="profile-hero-stat-number">100%</div>
-                  <div className="profile-hero-stat-label">Active</div>
-                </div>
-                <div className="profile-hero-stat">
-                  <div className="profile-hero-stat-number">{profile?.stats?.mutuals || 0}+</div>
-                  <div className="profile-hero-stat-label">Mutual Friends</div>
-                </div>
-              </div>
             </div>
 
             {/* Hidden file input */}
