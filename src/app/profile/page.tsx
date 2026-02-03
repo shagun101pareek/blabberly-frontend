@@ -12,6 +12,9 @@ import { getAuthToken, getUserId } from '../utils/auth';
 import { getUserConnectionsCountAPI } from '@/api/auth/users/getUserConnectionsCount';
 import ConnectionsModal from '../Components/ConnectionsModal';
 import EditProfileModal from '../Components/EditProfileModal';
+import { PiSuitcaseSimple } from "react-icons/pi";
+import { SlLocationPin } from "react-icons/sl";
+import { LuLink } from "react-icons/lu";
 
 interface Profile {
   _id: string;
@@ -325,6 +328,24 @@ export default function ProfilePage() {
                   <p className="profile-hero-tagline">
                     {displayTagline}
                   </p>
+                  <div className="profile-hero-metadata">
+                    <p className="profile-hero-role">
+                      <PiSuitcaseSimple/> Senior Software Engineer
+                    </p>
+                    <p className="profile-hero-location">
+                    <SlLocationPin />San Francisco, CA
+                    </p>
+                    {username && (
+                      <a
+                        className="profile-hero-website-link"
+                        href={`https://${username}.dev`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <LuLink /> {`${username}.dev`}
+                      </a>
+                    )}
+                  </div>
                   <div className="profile-hero-actions">
                     <button 
                       className="profile-hero-primary-btn"
@@ -344,21 +365,7 @@ export default function ProfilePage() {
                         />
                       </svg>
                     </button>
-                       {/* Bottom Section - Statistics
-              <div className="profile-hero-stats">
-                <button 
-                  className="profile-hero-stat cursor-pointer hover:opacity-80 transition-opacity"
-                  onClick={handleConnectionsClick}
-                  type="button"
-                >
-                  <div className="profile-hero-stat-number">{connections}</div>
-                  <div className="profile-hero-stat-label">Connections</div>
-                </button>
-                <div className="profile-hero-stat">
-                  <div className="profile-hero-stat-number">{profile?.stats?.mutuals || 0}+</div>
-                  <div className="profile-hero-stat-label">Mutual Friends</div>
-                </div>
-              </div> */}
+                
                   </div>
                 </div>
 
@@ -431,10 +438,67 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-           
-              </div>
-              </div>
+                {/* Profile Stats Cards Section - Below Profile Image */}
+                <div className="profile-stats-cards-container">
+                  {/* Tech Stack Card */}
+                  <div className="profile-stats-card">
+                    <div className="profile-stats-card-header">
+                      <div className="profile-stats-card-icon tech-stack-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                      <h3 className="profile-stats-card-title">Tech Stack</h3>
+                    </div>
+                  <div className="profile-stats-card-content">
+                    <div className="tech-stack-items">
+                      <span className="tech-stack-badge">React</span>
+                      <span className="tech-stack-badge">TypeScript</span>
+                      <span className="tech-stack-badge">Node.js</span>
+                      <span className="tech-stack-badge">MongoDB</span>
+                     
+                    </div>
+                  </div>
+                </div>
 
+                {/* Projects Card */}
+                <div className="profile-stats-card">
+                  <div className="profile-stats-card-header">
+                    <div className="profile-stats-card-icon projects-icon">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M9 22V12H15V22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                    <h3 className="profile-stats-card-title">Projects</h3>
+                  </div>
+                  <div className="profile-stats-card-content">
+                    <div className="profile-stats-card-value">2</div>
+                    <div className="profile-stats-card-label">NO. OF PROJECTS</div>
+                  </div>
+                </div>
+
+                {/* LeetCode Card */}
+                <div className="profile-stats-card">
+                  <div className="profile-stats-card-header">
+                    <div className="profile-stats-card-icon leetcode-icon">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M16 18L22 12L16 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M8 6L2 12L8 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                    <h3 className="profile-stats-card-title">LeetCode</h3>
+                  </div>
+                  <div className="profile-stats-card-content">
+                    <div className="profile-stats-card-value">250+</div>
+                    <div className="profile-stats-card-label">QUESTIONS</div>
+                  </div>
+                </div>
+                </div>
+              </div>
+              </div>
             </div>
 
             {/* Hidden file input */}
