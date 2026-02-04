@@ -18,6 +18,8 @@ import { getUserId } from '../utils/auth';
 export default function ChatPage() {
   const [activeTab, setActiveTab] = useState<'chats' | 'settings' | 'profile'>('chats');
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isMobileShowingChat, setIsMobileShowingChat] = useState(false);
   
   // Socket connection is now handled globally in SocketProvider (layout.tsx)
   // Users will appear online as soon as they're logged in, not just when visiting chat page
@@ -51,6 +53,32 @@ export default function ChatPage() {
   } = useChat();
 
   const currentUserId = getUserId() || 'current_user'; // Get from auth context
+
+  // Detect mobile viewport (width < 768px)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+
+    const handleChange = (event: MediaQueryListEvent | MediaQueryList) => {
+      // When switching between mobile/desktop, keep currently selected chat but
+      // let layout logic decide what to show.
+      setIsMobile(event.matches);
+    };
+
+    // Initial value
+    setIsMobile(mediaQuery.matches);
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', handleChange as (e: MediaQueryListEvent) => void);
+      return () => mediaQuery.removeEventListener('change', handleChange as (e: MediaQueryListEvent) => void);
+    } else {
+      // Fallback for older browsers (deprecated API)
+      const listener = (e: MediaQueryListEvent) => handleChange(e);
+      mediaQuery.addListener(listener);
+      return () => mediaQuery.removeListener(listener);
+    }
+  }, []);
 
   const handleTabChange = (tab: 'chats' | 'settings' | 'profile') => {
     setActiveTab(tab);
@@ -99,7 +127,13 @@ export default function ChatPage() {
 
   const handleSelectChat = useCallback((chatId: string) => {
     selectChat(chatId);
+    // On mobile, switch to chat view when a conversation is selected
+    setIsMobileShowingChat(true);
   }, [selectChat]);
+
+  const handleCloseMobileChat = useCallback(() => {
+    setIsMobileShowingChat(false);
+  }, []);
 
   // Get selected chat - this should update when messages change
   const selectedChat = getSelectedChat();
@@ -133,8 +167,8 @@ export default function ChatPage() {
                 {/* Loading State - Show skeleton or loading indicator */}
                 <div className="chat-list-sidebar">
                   <div className="chat-list-search">
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       placeholder="Search conversations..."
                       className="chat-list-search-input"
                       disabled
@@ -142,11 +176,14 @@ export default function ChatPage() {
                   </div>
                   <div className="chat-list"></div>
                 </div>
-                <div className="chat-window chat-window-empty">
-                  <div className="chat-window-empty-content">
-                    <div className="connections-spinner" style={{ margin: '0 auto' }}></div>
+                {/* On desktop we also show a loading chat window; on mobile list is enough */}
+                {!isMobile && (
+                  <div className="chat-window chat-window-empty">
+                    <div className="chat-window-empty-content">
+                      <div className="connections-spinner" style={{ margin: '0 auto' }}></div>
+                    </div>
                   </div>
-                </div>
+                )}
               </>
             ) : showEmptyState ? (
               <>
@@ -167,19 +204,27 @@ export default function ChatPage() {
               </>
             ) : (
               <>
-                <ChatList 
-                  chatRooms={chatRooms}
-                  selectedChatId={selectedChatId}
-                  onSelectChat={handleSelectChat}
-                  friendRequests={incomingRequests}
-                  onNewChat={handleOpenSearchModal}
-                />
-                <ChatWindow
-                  chatRoom={selectedChat}
-                  currentUserId={currentUserId}
-                  onSendMessage={handleSendMessage}
-                  // onMarkAsRead={markConnectionAsRead}
-                />
+                {/* On desktop/tablet show both panes. On mobile show either list or chat. */}
+                {(!isMobile || !isMobileShowingChat) && (
+                  <ChatList
+                    chatRooms={chatRooms}
+                    selectedChatId={selectedChatId}
+                    onSelectChat={handleSelectChat}
+                    friendRequests={incomingRequests}
+                    onNewChat={handleOpenSearchModal}
+                  />
+                )}
+                {(!isMobile || isMobileShowingChat) && (
+                  <ChatWindow
+                    chatRoom={selectedChat}
+                    currentUserId={currentUserId}
+                    onSendMessage={handleSendMessage}
+                    onMarkAsRead={markConnectionAsRead}
+                    hasFriends={hasFriends}
+                    isMobile={isMobile}
+                    onCloseMobile={isMobile ? handleCloseMobileChat : undefined}
+                  />
+                )}
               </>
             )}
           </div>
