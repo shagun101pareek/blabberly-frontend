@@ -23,6 +23,8 @@ interface ChatWindowProps {
   onSendMessage: (chatId: string, text: string) => void; // kept for compatibility
   onMarkAsRead?: (chatId: string) => void;
   hasFriends?: boolean;
+  isMobile?: boolean;
+  onCloseMobile?: () => void;
 }
 
 export default function ChatWindow({
@@ -31,6 +33,8 @@ export default function ChatWindow({
   onSendMessage,
   onMarkAsRead,
   hasFriends = false,
+  isMobile = false,
+  onCloseMobile,
 }: ChatWindowProps) {
   const router = useRouter();
   const [message, setMessage] = useState('');
@@ -917,6 +921,19 @@ useEffect(() => {
             {chatRoom.friendUsername}
           </h3>
           <UserStatus userId={chatRoom.friendId} variant="inline" />
+        </div>
+
+        <div className="chat-window-header-actions">
+          {isMobile && onCloseMobile && (
+            <button
+              type="button"
+              className="chat-window-close-btn"
+              onClick={onCloseMobile}
+              aria-label="Back to conversations"
+            >
+              ×
+            </button>
+          )}
         </div>
       </div>
 

@@ -2914,6 +2914,28 @@ textarea::placeholder {
   color: #667eea;
 }
 
+.chat-window-close-btn {
+  background: transparent;
+  border: none;
+  color: #484848;
+  cursor: pointer;
+  padding: 0.25rem;
+  margin-left: 0.25rem;
+  border-radius: 9999px;
+  font-size: 1.25rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.chat-window-close-btn:hover {
+  background-color: #f3f4f6;
+  color: #111827;
+  transform: scale(1.05);
+}
+
 .chat-window-messages {
   flex: 1;
   overflow-y: auto;
@@ -5016,12 +5038,19 @@ textarea::placeholder {
     font-size: 2.5rem;
   }
 
+  /* Profile hero text responsiveness */
+  .profile-hero-bio,
   .profile-hero-bio-primary {
     font-size: 1rem;
   }
 
+  .profile-hero-tagline,
   .profile-hero-bio-secondary {
     font-size: 0.875rem;
+  }
+
+  .profile-hero-metadata {
+    gap: 0.75rem;
   }
 
   .profile-hero-actions {
@@ -5571,5 +5600,129 @@ textarea::placeholder {
   .tech-stack-badge {
     font-size: 0.8125rem;
     padding: 0.4375rem 0.875rem;
+  }
+}
+
+/* ==================== PROFILE HERO RESPONSIVE RANGES ==================== */
+
+/* Small screens: up to 640px */
+@media screen and (max-width: 640px) {
+  .profile-hero-container {
+    padding: 1.5rem 1.5rem 3rem 1.5rem;
+  }
+
+  .profile-hero-main-content {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .profile-hero-left {
+    align-items: flex-start;
+  }
+
+  .profile-hero-name {
+    font-size: 2.25rem;
+    line-height: 1.2;
+  }
+
+  .profile-hero-bio {
+    font-size: 1rem;
+    line-height: 1.6;
+    max-width: 100%;
+  }
+
+  .profile-hero-tagline {
+    font-size: 0.875rem;
+    max-width: 100%;
+  }
+
+  .profile-hero-metadata {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .profile-stats-cards-container {
+    width: 100%;
+    padding: 1.5rem 0;
+    border-radius: 0;
+  }
+}
+
+/* Medium screens: 641px–1024px */
+@media screen and (min-width: 641px) and (max-width: 1024px) {
+  .profile-hero-container {
+    padding: 2rem 3rem 3rem 3rem;
+  }
+
+  .profile-hero-main-content {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1.2fr);
+    gap: 2.5rem;
+  }
+
+  .profile-stats-cards-container {
+    width: 120%;
+    padding: 2rem;
+  }
+}
+
+/* Large (not ultra-wide) screens: 1025px–1440px */
+@media screen and (min-width: 1025px) and (max-width: 1440px) {
+  .profile-hero-container {
+    padding: 3rem 6rem 4rem 8rem;
+  }
+
+  .profile-stats-cards-container {
+    width: 140%;
+  }
+}
+
+/* ==================== CHAT LAYOUT RESPONSIVE RANGES ==================== */
+
+/* Small screens: up to 640px */
+@media screen and (max-width: 640px) {
+  .chat-navbar-container {
+    min-width: 0;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .chat-container {
+    flex-direction: column;
+    padding-top: 4.5rem;
+  }
+
+  .chat-list-sidebar {
+    width: 100%;
+    max-width: none;
+    height: 50vh;
+    border-right: none;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .chat-window {
+    flex: 1;
+    min-height: 50vh;
+  }
+
+  .chat-window-header {
+    padding: 0.75rem 1rem;
+    height: 85px;
+  }
+
+  .chat-window-messages {
+    padding: 1rem;
+  }
+}
+
+/* Medium screens: 641px–1024px */
+@media screen and (min-width: 641px) and (max-width: 1024px) {
+  .chat-navbar-container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+
+  .chat-list-sidebar {
+    width: 340px;
   }
 }
