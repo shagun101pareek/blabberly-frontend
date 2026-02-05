@@ -40,6 +40,7 @@ export default function ChatWindow({
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<UIMessage[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { socket } = useSocket();
@@ -47,6 +48,8 @@ export default function ChatWindow({
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const isSendingFileRef = useRef(false); // CRITICAL: Track if we're sending a file to prevent text send
+  const initialScrollDoneRef = useRef(false);
+  const lastChatIdRef = useRef<string | null>(null);
 
   // Helper function to normalize image URLs (convert relative to absolute)
   const normalizeImageUrl = (url: string | undefined): string | undefined => {
@@ -569,8 +572,31 @@ useEffect(() => {
      SCROLL
   ============================== */
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (!chatRoom || !messagesContainerRef.current || !messagesEndRef.current) return;
+
+    const container = messagesContainerRef.current;
+
+    // Decide scroll behavior:
+    // - First time a chat is opened or when switching chats → jump to bottom (no animation)
+    // - Subsequent new messages while user is near bottom → smooth scroll
+    // - If user has scrolled up → don't force smooth scroll that drags from top
+    let behavior: ScrollBehavior = 'auto';
+
+    const isNewChat = lastChatIdRef.current !== chatRoom.id || !initialScrollDoneRef.current;
+
+    if (!isNewChat) {
+      const threshold = 100; // px from bottom considered "at bottom"
+      const distanceFromBottom =
+        container.scrollHeight - container.scrollTop - container.clientHeight;
+
+      behavior = distanceFromBottom < threshold ? 'smooth' : 'auto';
+    }
+
+    messagesEndRef.current.scrollIntoView({ behavior, block: 'end' });
+
+    initialScrollDoneRef.current = true;
+    lastChatIdRef.current = chatRoom.id;
+  }, [messages, chatRoom?.id]);
 
   /* =============================
      FOCUS + READ
@@ -838,6 +864,26 @@ useEffect(() => {
       hour12: true,
     }).format(date);
 
+  const formatDateHeader = (date: Date) => {
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+
+    const isSameDay = (d1: Date, d2: Date) =>
+      d1.getFullYear() === d2.getFullYear() &&
+      d1.getMonth() === d2.getMonth() &&
+      d1.getDate() === d2.getDate();
+
+    if (isSameDay(date, today)) return 'Today';
+    if (isSameDay(date, yesterday)) return 'Yesterday';
+
+    return new Intl.DateTimeFormat('en-US', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    }).format(date);
+  };
+
   /* =============================
      EMPTY STATES
   ============================== */
@@ -863,6 +909,39 @@ useEffect(() => {
     if (chatRoom?.friendId) {
       router.push(`/user/${chatRoom.friendId}`);
     }
+  };
+
+  const renderMessages = () => {
+    let lastDateKey: string | null = null;
+
+    return messages.map((msg) => {
+      const msgDate =
+        msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp);
+      const dateKey = msgDate.toDateString();
+      const showDateHeader = dateKey !== lastDateKey;
+      const isMine = msg.senderId === currentUserId;
+
+      if (showDateHeader) {
+        lastDateKey = dateKey;
+      }
+
+      return (
+        <div key={msg.id}>
+          {showDateHeader && (
+            <div className="chat-date-divider">
+              <span className="chat-date-divider-label">
+                {formatDateHeader(msgDate)}
+              </span>
+            </div>
+          )}
+          <MessageBubble
+            message={msg}
+            isMine={isMine}
+            formatTime={formatTime}
+          />
+        </div>
+      );
+    });
   };
 
   // Helper function to normalize image URLs (convert relative to absolute)
@@ -938,18 +1017,8 @@ useEffect(() => {
       </div>
 
       {/* Messages */}
-      <div className="chat-window-messages">
-        {messages.map((msg) => {
-          const isMine = msg.senderId === currentUserId;
-          return (
-            <MessageBubble
-              key={msg.id}
-              message={msg}
-              isMine={isMine}
-              formatTime={formatTime}
-            />
-          );
-        })}
+      <div className="chat-window-messages" ref={messagesContainerRef}>
+        {renderMessages()}
         {isTyping && (
           <div className="chat-window-typing">
             <div className="chat-window-typing-indicator">
