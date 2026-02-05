@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { removeAuthToken } from '../utils/auth';
 import { disconnectSocket } from '../utils/socket';
 import { useUser } from '../context/UserContext';
 import { getUserProfileImage } from '../types/user';
+
+const SIDEBAR_MOBILE_BREAKPOINT = 680;
 
 interface ChatSidebarProps {
   activeTab?: 'chats' | 'settings' | 'profile';
@@ -14,30 +16,45 @@ interface ChatSidebarProps {
 
 export default function ChatSidebar({ activeTab = 'chats', onTabChange }: ChatSidebarProps) {
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia(`(max-width: ${SIDEBAR_MOBILE_BREAKPOINT}px)`);
+    const handleChange = (e: MediaQueryListEvent) => {
+      setIsMobile(e.matches);
+      if (!e.matches) setSidebarOpen(false);
+    };
+    setIsMobile(mq.matches);
+    mq.addEventListener('change', handleChange);
+    return () => mq.removeEventListener('change', handleChange);
+  }, []);
   const { user } = useUser();
   const profileImageUrl = getUserProfileImage(user);
   const initials = user?.username?.charAt(0).toUpperCase() || 'U';
 
+  const closeSidebarIfMobile = () => {
+    if (isMobile) setSidebarOpen(false);
+  };
+
   const handleTabClick = (tab: 'chats' | 'settings' | 'profile') => {
     if (tab === 'chats') {
-      // Navigate to chat page
       router.push('/chat');
     } else if (tab === 'profile') {
-      // Navigate to profile page
       router.push('/profile');
     } else if (onTabChange) {
       onTabChange(tab);
     }
+    closeSidebarIfMobile();
   };
 
   const handleLogout = () => {
-    // Disconnect socket on logout
     disconnectSocket();
-    // Remove authentication token
     removeAuthToken();
-    // Redirect to home page
     router.push('/');
+    closeSidebarIfMobile();
   };
 
   const handleDiscoverClick = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -53,10 +70,60 @@ export default function ChatSidebar({ activeTab = 'chats', onTabChange }: ChatSi
     } else {
       console.log('Already on connections page');
     }
+    closeSidebarIfMobile();
   };
 
   return (
-    <div className="chat-sidebar">
+    <>
+      {/* Backdrop for mobile overlay */}
+      {isMobile && (
+        <div
+          className={`chat-sidebar-backdrop ${sidebarOpen ? 'is-visible' : ''}`}
+          onClick={closeSidebarIfMobile}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Hamburger: show only on mobile when sidebar is closed */}
+      {isMobile && !sidebarOpen && (
+        <button
+          type="button"
+          className="chat-sidebar-hamburger"
+          onClick={() => setSidebarOpen(true)}
+          aria-label="Open menu"
+          aria-expanded={sidebarOpen}
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+          >
+            <path
+              d="M3 6h18M3 12h18M3 18h18"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
+      )}
+
+      <div className={`chat-sidebar ${sidebarOpen && isMobile ? 'is-open' : ''}`}>
+        {isMobile && sidebarOpen && (
+          <button
+            type="button"
+            className="chat-sidebar-close"
+            onClick={closeSidebarIfMobile}
+            aria-label="Close menu"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        )}
       {/* Top Section - Chats */}
       <div className="sidebar-top">
         <button
@@ -230,6 +297,7 @@ export default function ChatSidebar({ activeTab = 'chats', onTabChange }: ChatSi
         </button>
       </div>
     </div>
+    </>
   );
 }
 

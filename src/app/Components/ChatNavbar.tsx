@@ -18,6 +18,7 @@ export default function ChatNavbar({}: ChatNavbarProps) {
   const profileImageUrl = getUserProfileImage(user);
   const initials = user?.username?.charAt(0).toUpperCase() || 'U';
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
   // User search hook
@@ -29,6 +30,30 @@ export default function ChatNavbar({}: ChatNavbarProps) {
     setSearchQuery,
     clearResults,
   } = useUserSearch();
+
+  // Track mobile viewport to adjust placeholder text
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const mediaQuery = window.matchMedia('(max-width: 640px)');
+
+    const handleChange = (event: MediaQueryListEvent | MediaQueryList) => {
+      setIsMobile(event.matches);
+    };
+
+    // Initial value
+    setIsMobile(mediaQuery.matches);
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', handleChange as (e: MediaQueryListEvent) => void);
+      return () => mediaQuery.removeEventListener('change', handleChange as (e: MediaQueryListEvent) => void);
+    } else {
+      // Fallback for older browsers (deprecated API)
+      const listener = (e: MediaQueryListEvent) => handleChange(e);
+      mediaQuery.addListener(listener);
+      return () => mediaQuery.removeListener(listener);
+    }
+  }, []);
 
   // Handle click outside to close search results
   useEffect(() => {
@@ -70,7 +95,7 @@ export default function ChatNavbar({}: ChatNavbarProps) {
               value={searchQuery}
               onChange={setSearchQuery}
               onFocus={() => setIsSearchFocused(true)}
-              placeholder="Search users by name or username"
+              placeholder={isMobile ? 'Search by username' : 'Search users by name or username'}
             />
             {isSearchFocused && (searchQuery.length >= 2 || isSearchLoading || searchError) && (
               <UserSearchResults
