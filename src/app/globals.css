@@ -4674,35 +4674,28 @@ textarea::placeholder {
   font-style: italic;
 }
 
-.profile-hero-metadata {
-  display: row;
-}
-
-.profile-hero-role {
-  font-size: 14px;
-  color: #826A72;
-  line-height: 24px;
-  font-weight: 600;
-  margin: 0;
-  max-width: 500px;
-}
-
-.profile-hero-location {
-  font-size: 14px;
-  color: #826A72;
-  line-height: 24px;
-  font-weight: 600;
-  margin: 0;
-  max-width: 500px;
-}
-
+.profile-hero-role,
+.profile-hero-location,
 .profile-hero-website-link {
   font-size: 14px;
   color: #826A72;
   line-height: 24px;
   font-weight: 600;
   margin: 0;
-  max-width: 500px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.profile-hero-website-link {
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.profile-hero-website-link:hover {
+  color: #9333ea;
 }
 /* Profile Identity Section */
 .profile-hero-name-section {
@@ -4755,10 +4748,11 @@ textarea::placeholder {
 /* Metadata Row */
 .profile-hero-metadata {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 1.5rem;
   align-items: center;
-  margin-top: 0.5rem;
+  margin-top: 1rem;
+  flex-direction: row;
 }
 
 .profile-hero-metadata-item {
@@ -4797,7 +4791,7 @@ textarea::placeholder {
   display: flex;
   align-items: center;
   gap: 1rem;
-  margin-top: 0.5rem;
+  margin-top: 2.5rem;
   flex-wrap: wrap;
 }
 
@@ -4809,7 +4803,7 @@ textarea::placeholder {
   font-size: 0.9375rem;
   font-weight: 600;
   color: white;
-  background: linear-gradient(to right, #9333ea, #ec4899);
+  background: linear-gradient(to right, #ff2158, #f6349b);
   border: none;
   border-radius: 9999px;
   cursor: pointer;
@@ -5413,7 +5407,6 @@ textarea::placeholder {
   font-size: 1.25rem;
   font-style: italic;
   margin-top: 0.5rem;
-  margin-bottom: 1rem;
 }
 
 /* Action Buttons Container */
@@ -5541,6 +5534,7 @@ textarea::placeholder {
 @media (min-width: 1024px) {
   .profile-stats-cards-container {
     transform: translateX(-25%);
+    width: 170%;
   }
 }
 
@@ -5830,9 +5824,17 @@ textarea::placeholder {
   }
 
   .profile-hero-metadata {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+  
+  .profile-hero-role,
+  .profile-hero-location,
+  .profile-hero-website-link {
+    flex-shrink: 0;
   }
 
   .profile-stats-cards-container {
@@ -5867,6 +5869,27 @@ textarea::placeholder {
 
   .profile-stats-cards-container {
     width: 140%;
+    transform: translate(-25%, 25%);
+  }
+}
+
+/* Slightly extended small breakpoint just for profile stats layout */
+@media screen and (max-width: 680px) {
+  /* Allow profile container to grow beyond viewport height */
+  .profile-hero-container {
+    height: auto;
+    min-height: auto;
+    overflow-y: visible;
+    padding-bottom: 4rem;
+  }
+
+  /* Ensure main content has proper spacing for cards */
+  .profile-hero-main-content {
+    margin-bottom: 2rem;
+  }
+
+  .profile-stats-cards-container {
+    display: none;
   }
 }
 
