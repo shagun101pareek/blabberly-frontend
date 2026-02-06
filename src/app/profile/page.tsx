@@ -307,7 +307,7 @@ export default function ProfilePage() {
         <ChatNavbar />
         <div className="chat-main-container">
           <ChatSidebar activeTab="profile" onTabChange={handleTabChange} />
-          <div className="chat-container">
+          <div className="chat-container overflow-y-auto">
             <div className="profile-hero-container">
               <div className="profile-hero-main-content">
                 {/* Left Section - Text and Buttons */}
