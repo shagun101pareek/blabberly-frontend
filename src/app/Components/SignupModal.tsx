@@ -9,9 +9,10 @@ import { setAuthToken } from '@/app/utils/auth';
 interface SignupModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSwitchToLogin?: () => void;
 }
 
-export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
+export default function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -187,6 +188,22 @@ export default function SignupModal({ isOpen, onClose }: SignupModalProps) {
         >
           {isLoading ? 'Creating Account...' : 'Sign Up'}
         </button>
+
+        {onSwitchToLogin && (
+          <p className="modal-switch-auth">
+            Already have an account?{' '}
+            <button
+              type="button"
+              className="modal-switch-auth-link"
+              onClick={() => {
+                onClose();
+                onSwitchToLogin();
+              }}
+            >
+              Login
+            </button>
+          </p>
+        )}
       </form>
     </Modal>
   );
