@@ -3,10 +3,12 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import SignupModal from './SignupModal';
+import LoginModal from './LoginModal';
 import { FaArrowRight } from "react-icons/fa6";
 
 export default function MainContent() {
     const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
+    const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
     return (
       <>
@@ -101,7 +103,15 @@ export default function MainContent() {
         {/* Signup Modal */}
         <SignupModal 
           isOpen={isSignupModalOpen} 
-          onClose={() => setIsSignupModalOpen(false)} 
+          onClose={() => setIsSignupModalOpen(false)}
+          onSwitchToLogin={() => {
+            setIsSignupModalOpen(false);
+            setIsLoginModalOpen(true);
+          }}
+        />
+        <LoginModal 
+          isOpen={isLoginModalOpen} 
+          onClose={() => setIsLoginModalOpen(false)} 
         />
       </>
     );
